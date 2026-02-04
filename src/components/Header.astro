@@ -35,9 +35,19 @@ const { pathname } = Astro.url;
           <path d="M24 16 L18 19 L20 16 L18 13 Z" class="fill-primary"></path>
         </svg>
       </div>
-      <span class="font-bold text-lg text-foreground tracking-tight"
-        >Gemini Watermark Remover</span
+      <div
+        class="flex flex-col items-start sm:flex-row sm:items-center gap-0.5 sm:gap-2"
       >
+        <span
+          class="font-bold text-base sm:text-lg text-foreground tracking-tight"
+          >Gemini Watermark Remover</span
+        >
+        <span
+          class="bg-muted/50 text-muted-foreground text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-border/40 whitespace-nowrap leading-none"
+        >
+          100% Client Side
+        </span>
+      </div>
     </a>
 
     <nav class="flex items-center gap-1">
