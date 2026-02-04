@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* Coffee Shop Theme - Custom Properties */
+@theme {
+  --color-background: #fdfcfb; /* Nature White */
+  --color-foreground: #4a4036; /* Brownish Text */
+
+  --color-card: #ffffff;
+  --color-card-foreground: #4a4036;
+
+  --color-primary: #5d8c7b; /* Jade */
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #e3e8e5; /* Light Sage */
+  --color-secondary-foreground: #2d4036;
+
+  --color-accent: #f2f5f3; /* Very Light Sage */
+  --color-accent-foreground: #2d4036;
+
+  --color-muted: #f0f0eb;
+  --color-muted-foreground: #8c8477; /* Sage/Brown Grey */
+
+  --color-border: #e6e2dc;
+  --color-input: #e6e2dc;
+
+  /* Fonts */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Base styles */
+html {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Smooth animations */
+* {
+  transition-property:
+    color, background-color, border-color, opacity, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-foreground);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-card);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
+}
+
+/* Animations */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-in {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+.slide-in-from-right-full {
+  animation-name: slideInFromRight;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+/* Grid utilities */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}

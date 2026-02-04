@@ -1,0 +1,16 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { BatchProcessor } from "../components/BatchProcessor";
+import { ToastProvider } from "../components/ui/Toast";
+---
+
+<Layout title="Batch Processing - Gemini Watermark Remover">
+  <div class="space-y-6">
+    <div class="text-center space-y-2">
+      <h1 class="text-3xl font-bold text-foreground">Batch Processing</h1>
+      <p class="text-muted-foreground">Process multiple images at once</p>
+    </div>
+
+    <BatchProcessor client:load />
+  </div>
+</Layout>
