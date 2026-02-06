@@ -4,7 +4,7 @@ A powerful, privacy-focused web application for removing watermarks from images 
 
 ## ✨ Features
 
-- **Advanced Watermark Removal**: Faithfully ported algorithm from the original GeminiRef project, ensuring high-quality restoration.
+- **Advanced Watermark Removal**: Faithfully ported algorithm from the original GeminiWatermarkTool project, ensuring high-quality restoration.
 - **Batch Processing**: Process multiple images simultaneously and download them as a ZIP archive.
 - **Local History**: Your processed images are saved locally using IndexedDB, so you can revisit them anytime.
 - **Privacy First**: All processing happens client-side. No images are ever uploaded to a server.
