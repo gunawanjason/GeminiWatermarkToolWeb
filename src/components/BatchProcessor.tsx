@@ -27,6 +27,15 @@ import { generateId, saveToHistory } from "@/lib/storage";
 import { processImage, downloadBlob } from "@/lib/watermark";
 import { downloadAsZip, type ZipFile } from "@/lib/zip";
 import { cn } from "@/lib/utils";
+import {
+  trackBatchUpload,
+  trackBatchProcess,
+  trackBatchDownload,
+  trackBatchClear,
+  trackDownload,
+  trackBatchModeUse,
+  trackError,
+} from "@/lib/analytics";
 
 interface BatchProcessorProps {
   onHistoryUpdated?: () => void;
@@ -39,10 +48,17 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
   const [isDragging, setIsDragging] = React.useState(false);
   const [previewItem, setPreviewItem] = React.useState<ImageItem | null>(null);
   const [autoProcess, setAutoProcess] = React.useState(true);
+  const [batchStartTime, setBatchStartTime] = React.useState<number>(0);
+  const [uploadedFiles, setUploadedFiles] = React.useState<File[]>([]);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const { addToast } = useToast();
+
+  // Track batch mode usage on mount
+  React.useEffect(() => {
+    trackBatchModeUse();
+  }, []);
 
   const stats: ProcessingStats = React.useMemo(() => {
     return {
@@ -69,6 +85,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
       return canvas.toDataURL("image/png");
     } catch (error) {
       console.error("Error processing:", error);
+      trackError('batch_processing_error', String(error), 'BatchProcessor');
       return null;
     }
   }, []);
@@ -79,6 +96,11 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
       if (!autoProcess) return;
 
       setIsProcessing(true);
+      const startTime = Date.now();
+      setBatchStartTime(startTime);
+
+      let successCount = 0;
+      let errorCount = 0;
 
       for (const item of newItems) {
         setImages((prev) =>
@@ -90,6 +112,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
         const processedDataUrl = await processOneImage(item);
 
         if (processedDataUrl) {
+          successCount++;
           setImages((prev) =>
             prev.map((i) =>
               i.id === item.id
@@ -113,6 +136,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
             processedAt: Date.now(),
           });
         } else {
+          errorCount++;
           setImages((prev) =>
             prev.map((i) =>
               i.id === item.id
@@ -125,21 +149,38 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
 
       setIsProcessing(false);
       onHistoryUpdated?.();
+
+      // Track batch processing completion
+      const totalSizeBytes = uploadedFiles.reduce((sum, f) => sum + f.size, 0);
+      trackBatchProcess({
+        fileCount: newItems.length,
+        totalSizeBytes,
+        durationMs: Date.now() - startTime,
+        successCount,
+        errorCount,
+      });
+
       addToast("success", `Processed ${newItems.length} image(s)`);
     },
-    [autoProcess, processOneImage, addToast, onHistoryUpdated],
+    [autoProcess, processOneImage, addToast, onHistoryUpdated, uploadedFiles],
   );
 
   const handleFiles = React.useCallback(
-    async (files: FileList | File[]) => {
+    async (files: FileList | File[], method: 'click' | 'drag_drop' = 'click') => {
       const validFiles = Array.from(files).filter((f) =>
         f.type.startsWith("image/"),
       );
 
       if (validFiles.length === 0) {
+        trackError('invalid_batch_files', 'No valid image files in batch upload', 'BatchProcessor');
         addToast("error", "No valid image files found");
         return;
       }
+
+      // Track batch upload
+      const totalSizeBytes = validFiles.reduce((sum, f) => sum + f.size, 0);
+      setUploadedFiles((prev) => [...prev, ...validFiles]);
+      trackBatchUpload(validFiles, totalSizeBytes);
 
       const newItems: ImageItem[] = [];
 
@@ -174,7 +215,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      handleFiles(e.dataTransfer.files);
+      handleFiles(e.dataTransfer.files, 'drag_drop');
     },
     [handleFiles],
   );
@@ -200,9 +241,14 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
         const newFileName =
           item.file.name.replace(/\.[^.]+$/, "") + "_clean.png";
         downloadBlob(pngBlob, newFileName);
+
+        // Track individual download in batch
+        trackDownload(newFileName, 'image/png', 'batch');
+
         addToast("success", `Downloaded ${newFileName}`);
       } catch (error) {
         console.error("Download error:", error);
+        trackError('batch_download_failed', String(error), 'BatchProcessor');
         addToast("error", "Failed to download image");
       }
     },
@@ -230,6 +276,10 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
       files,
       `processed_images_${new Date().toISOString().slice(0, 10)}.zip`,
     );
+
+    // Track batch download as ZIP
+    trackBatchDownload(completed.length, 'zip');
+
     addToast("success", `Downloaded ${files.length} images as ZIP`);
   }, [images, addToast]);
 
@@ -374,7 +424,10 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleClearAll}
+                  onClick={() => {
+                    handleClearAll();
+                    trackBatchClear(images.length);
+                  }}
                   disabled={isProcessing}
                 >
                   <Trash2 className="w-4 h-4 mr-1" />

@@ -27,6 +27,17 @@ import {
   type WatermarkSize,
 } from "@/lib/watermark";
 import { saveToHistory, generateId } from "@/lib/storage";
+import {
+  trackFileUpload,
+  trackProcessingStart,
+  trackProcessingComplete,
+  trackProcessingError,
+  trackDownload,
+  trackCompareToggle,
+  trackZoomView,
+  trackSingleModeUse,
+  trackError,
+} from "@/lib/analytics";
 
 type ProcessingStage = "idle" | "uploading" | "processing" | "complete";
 
@@ -44,10 +55,17 @@ function WatermarkRemoverContent() {
   const [detectedSize, setDetectedSize] = useState<WatermarkSize | null>(null);
   const [showZoom, setShowZoom] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [processingStartTime, setProcessingStartTime] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { addToast } = useToast();
+
+  // Track single mode usage on mount
+  useEffect(() => {
+    trackSingleModeUse();
+  }, []);
 
   // Auto-process when image is loaded
   const processLoadedImage = useCallback(
@@ -56,10 +74,19 @@ function WatermarkRemoverContent() {
       name: string,
       size: { width: number; height: number },
     ) => {
-      if (!canvasRef.current) return;
+      if (!canvasRef.current || !currentFile) return;
 
       setStage("processing");
       setProgress(0);
+      const startTime = Date.now();
+      setProcessingStartTime(startTime);
+
+      // Track processing start
+      trackProcessingStart(currentFile, {
+        width: size.width,
+        height: size.height,
+        watermarkSize: detectedSize || undefined,
+      });
 
       // Simulate progress for better UX
       const progressInterval = setInterval(() => {
@@ -80,6 +107,14 @@ function WatermarkRemoverContent() {
         setProcessedImage(processedDataUrl);
         setStage("complete");
 
+        // Track processing completion
+        trackProcessingComplete(currentFile, {
+          width: size.width,
+          height: size.height,
+          durationMs: Date.now() - startTime,
+          watermarkSize: detectedSize || undefined,
+        });
+
         // Save to history
         await saveToHistory({
           id: generateId(),
@@ -94,22 +129,32 @@ function WatermarkRemoverContent() {
         addToast("success", "Watermark removed successfully!");
       } catch (error) {
         console.error("Error processing image:", error);
+
+        // Track processing error
+        trackProcessingError(
+          currentFile,
+          error instanceof Error ? error : new Error(String(error)),
+          { width: size.width, height: size.height }
+        );
+
         addToast("error", "Error processing image. Please try again.");
         setStage("idle");
       } finally {
         clearInterval(progressInterval);
       }
     },
-    [addToast],
+    [addToast, currentFile, detectedSize],
   );
 
   const handleFile = useCallback(
-    (file: File) => {
+    (file: File, method: 'click' | 'drag_drop' = 'click') => {
       if (!file.type.startsWith("image/")) {
+        trackError('invalid_file_type', `User tried to upload ${file.type}`, 'WatermarkRemover');
         addToast("error", "Please upload an image file");
         return;
       }
 
+      setCurrentFile(file);
       setStage("uploading");
       setProgress(0);
       setFileName(file.name);
@@ -134,6 +179,12 @@ function WatermarkRemoverContent() {
             getWatermarkSize(img.naturalWidth, img.naturalHeight),
           );
 
+          // Track file upload
+          trackFileUpload(file, method, {
+            width: size.width,
+            height: size.height,
+          });
+
           // Auto-process after loading
           processLoadedImage(dataUrl, file.name, size);
         };
@@ -150,7 +201,7 @@ function WatermarkRemoverContent() {
       setIsDragging(false);
 
       const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      if (file) handleFile(file, 'drag_drop');
     },
     [handleFile],
   );
@@ -174,9 +225,14 @@ function WatermarkRemoverContent() {
       const pngBlob = new Blob([blob], { type: "image/png" });
       const newFileName = fileName.replace(/\.[^.]+$/, "") + "_clean.png";
       downloadBlob(pngBlob, newFileName);
+
+      // Track download
+      trackDownload(newFileName, 'image/png', 'single');
+
       addToast("success", `Downloaded ${newFileName}`);
     } catch (error) {
       console.error("Error downloading:", error);
+      trackError('download_failed', String(error), 'WatermarkRemover');
       addToast("error", "Failed to download image");
     }
   }, [processedImage, fileName, addToast]);
@@ -383,9 +439,10 @@ function WatermarkRemoverContent() {
                 <div
                   className="relative rounded-lg overflow-hidden bg-black/5 cursor-pointer group"
                   onClick={() => {
-                    setShowOriginal(true);
-                    setShowZoom(true);
-                  }}
+                setShowOriginal(true);
+                setShowZoom(true);
+                trackZoomView(fileName);
+              }}
                 >
                   <img
                     src={originalImage}
@@ -419,9 +476,10 @@ function WatermarkRemoverContent() {
                 <div
                   className="relative rounded-lg overflow-hidden bg-black/5 cursor-pointer group"
                   onClick={() => {
-                    setShowOriginal(false);
-                    setShowZoom(true);
-                  }}
+                  setShowOriginal(false);
+                  setShowZoom(true);
+                  trackZoomView(fileName);
+                }}
                 >
                   <img
                     src={processedImage}
@@ -472,7 +530,10 @@ function WatermarkRemoverContent() {
             {/* Controls */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/70 backdrop-blur-sm rounded-full px-6 py-3">
               <button
-                onClick={() => setShowOriginal(true)}
+                onClick={() => {
+                  setShowOriginal(true);
+                  trackCompareToggle(true);
+                }}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   showOriginal
                     ? "bg-white text-black"
@@ -482,7 +543,10 @@ function WatermarkRemoverContent() {
                 Original
               </button>
               <button
-                onClick={() => setShowOriginal(false)}
+                onClick={() => {
+                  setShowOriginal(false);
+                  trackCompareToggle(false);
+                }}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   !showOriginal
                     ? "bg-white text-black"

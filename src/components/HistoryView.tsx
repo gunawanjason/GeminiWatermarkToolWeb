@@ -7,6 +7,14 @@ import type { HistoryItem } from "@/lib/types";
 import { getHistory, deleteHistoryItem, clearHistory } from "@/lib/storage";
 import { downloadBlob } from "@/lib/watermark";
 import { downloadAsZip, type ZipFile } from "@/lib/zip";
+import {
+  trackHistoryView,
+  trackHistoryDownload,
+  trackHistoryDelete,
+  trackHistoryClearAll,
+  trackHistoryDownloadAll,
+  trackError,
+} from "@/lib/analytics";
 
 interface HistoryViewProps {
   refreshTrigger?: number;
@@ -25,8 +33,12 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
     try {
       const history = await getHistory();
       setItems(history);
+
+      // Track history view with item count
+      trackHistoryView(history.length);
     } catch (error) {
       console.error("Failed to load history:", error);
+      trackError('history_load_failed', String(error), 'HistoryView');
       addToast("error", "Failed to load history");
     } finally {
       setLoading(false);
@@ -50,9 +62,14 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
         const newFileName =
           item.fileName.replace(/\.[^.]+$/, "") + "_clean.png";
         downloadBlob(pngBlob, newFileName);
+
+        // Track history download
+        trackHistoryDownload(newFileName);
+
         addToast("success", `Downloaded ${newFileName}`);
       } catch (error) {
         console.error("Download error:", error);
+        trackError('history_download_failed', String(error), 'HistoryView');
         addToast("error", "Failed to download image");
       }
     },
@@ -64,9 +81,14 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
       try {
         await deleteHistoryItem(id);
         setItems((prev) => prev.filter((i) => i.id !== id));
+
+        // Track history delete
+        trackHistoryDelete();
+
         addToast("success", "Removed from history");
       } catch (error) {
         console.error("Failed to delete:", error);
+        trackError('history_delete_failed', String(error), 'HistoryView');
         addToast("error", "Failed to delete item");
       }
     },
@@ -77,14 +99,20 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
     if (!confirm("Are you sure you want to clear all history?")) return;
 
     try {
+      const itemCount = items.length;
       await clearHistory();
       setItems([]);
+
+      // Track history clear all
+      trackHistoryClearAll(itemCount);
+
       addToast("success", "History cleared");
     } catch (error) {
       console.error("Failed to clear history:", error);
+      trackError('history_clear_failed', String(error), 'HistoryView');
       addToast("error", "Failed to clear history");
     }
-  }, [addToast]);
+  }, [addToast, items.length]);
 
   const handleDownloadAll = React.useCallback(async () => {
     if (items.length === 0) return;
@@ -100,6 +128,10 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
       files,
       `history_${new Date().toISOString().slice(0, 10)}.zip`,
     );
+
+    // Track history download all
+    trackHistoryDownloadAll(items.length);
+
     addToast("success", `Downloaded ${files.length} images as ZIP`);
   }, [items, addToast]);
 
