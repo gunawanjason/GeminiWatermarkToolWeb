@@ -73,16 +73,16 @@ function WatermarkRemoverContent() {
       dataUrl: string,
       name: string,
       size: { width: number; height: number },
+      file: File,
     ) => {
-      if (!canvasRef.current || !currentFile) return;
+      if (!canvasRef.current) return;
 
       setStage("processing");
       setProgress(0);
       const startTime = Date.now();
       setProcessingStartTime(startTime);
 
-      // Track processing start
-      trackProcessingStart(currentFile, {
+      trackProcessingStart(file, {
         width: size.width,
         height: size.height,
         watermarkSize: detectedSize || undefined,
@@ -107,15 +107,13 @@ function WatermarkRemoverContent() {
         setProcessedImage(processedDataUrl);
         setStage("complete");
 
-        // Track processing completion
-        trackProcessingComplete(currentFile, {
+        trackProcessingComplete(file, {
           width: size.width,
           height: size.height,
           durationMs: Date.now() - startTime,
           watermarkSize: detectedSize || undefined,
         });
 
-        // Save to history
         await saveToHistory({
           id: generateId(),
           fileName: name,
@@ -130,9 +128,8 @@ function WatermarkRemoverContent() {
       } catch (error) {
         console.error("Error processing image:", error);
 
-        // Track processing error
         trackProcessingError(
-          currentFile,
+          file,
           error instanceof Error ? error : new Error(String(error)),
           { width: size.width, height: size.height }
         );
@@ -143,7 +140,7 @@ function WatermarkRemoverContent() {
         clearInterval(progressInterval);
       }
     },
-    [addToast, currentFile, detectedSize],
+    [addToast, detectedSize],
   );
 
   const handleFile = useCallback(
@@ -185,8 +182,7 @@ function WatermarkRemoverContent() {
             height: size.height,
           });
 
-          // Auto-process after loading
-          processLoadedImage(dataUrl, file.name, size);
+          processLoadedImage(dataUrl, file.name, size, file);
         };
         img.src = dataUrl;
       };
