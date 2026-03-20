@@ -7,16 +7,15 @@ import {
   Archive,
   CheckCircle,
   XCircle,
-  Eye,
   ZoomIn,
   X,
   Sparkles,
-  RefreshCw,
   Clock,
   AlertCircle,
   Loader2,
-  ImageIcon,
   Check,
+  Layers,
+  FileImage,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Card, CardContent } from "./ui/Card";
@@ -50,12 +49,12 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
   const [autoProcess, setAutoProcess] = React.useState(true);
   const [batchStartTime, setBatchStartTime] = React.useState<number>(0);
   const [uploadedFiles, setUploadedFiles] = React.useState<File[]>([]);
+  const [currentProcessingIndex, setCurrentProcessingIndex] = React.useState<number>(-1);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const { addToast } = useToast();
 
-  // Track batch mode usage on mount
   React.useEffect(() => {
     trackBatchModeUse();
   }, []);
@@ -69,7 +68,6 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
     };
   }, [images]);
 
-  // Process a single image
   const processOneImage = React.useCallback(async (item: ImageItem) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -90,7 +88,6 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
     }
   }, []);
 
-  // Auto-process new images
   const processNewImages = React.useCallback(
     async (newItems: ImageItem[]) => {
       if (!autoProcess) return;
@@ -102,7 +99,10 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
       let successCount = 0;
       let errorCount = 0;
 
-      for (const item of newItems) {
+      for (let idx = 0; idx < newItems.length; idx++) {
+        const item = newItems[idx];
+        setCurrentProcessingIndex(images.indexOf(item));
+
         setImages((prev) =>
           prev.map((i) =>
             i.id === item.id ? { ...i, status: "processing" } : i,
@@ -147,10 +147,10 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
         }
       }
 
+      setCurrentProcessingIndex(-1);
       setIsProcessing(false);
       onHistoryUpdated?.();
 
-      // Track batch processing completion
       const totalSizeBytes = uploadedFiles.reduce((sum, f) => sum + f.size, 0);
       trackBatchProcess({
         fileCount: newItems.length,
@@ -162,11 +162,11 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
 
       addToast("success", `Processed ${newItems.length} image(s)`);
     },
-    [autoProcess, processOneImage, addToast, onHistoryUpdated, uploadedFiles],
+    [autoProcess, processOneImage, addToast, onHistoryUpdated, uploadedFiles, images],
   );
 
   const handleFiles = React.useCallback(
-    async (files: FileList | File[], method: 'click' | 'drag_drop' = 'click') => {
+    async (files: FileList | File[]) => {
       const validFiles = Array.from(files).filter((f) =>
         f.type.startsWith("image/"),
       );
@@ -177,7 +177,6 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
         return;
       }
 
-      // Track batch upload
       const totalSizeBytes = validFiles.reduce((sum, f) => sum + f.size, 0);
       setUploadedFiles((prev) => [...prev, ...validFiles]);
       trackBatchUpload(validFiles, totalSizeBytes);
@@ -203,7 +202,6 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
       setImages((prev) => [...prev, ...newItems]);
       addToast("info", `Added ${newItems.length} image(s)`);
 
-      // Auto-process if enabled
       if (autoProcess) {
         processNewImages(newItems);
       }
@@ -215,7 +213,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      handleFiles(e.dataTransfer.files, 'drag_drop');
+      handleFiles(e.dataTransfer.files);
     },
     [handleFiles],
   );
@@ -242,7 +240,6 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
           item.file.name.replace(/\.[^.]+$/, "") + "_clean.png";
         downloadBlob(pngBlob, newFileName);
 
-        // Track individual download in batch
         trackDownload(newFileName, 'image/png', 'batch');
 
         addToast("success", `Downloaded ${newFileName}`);
@@ -277,7 +274,6 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
       `processed_images_${new Date().toISOString().slice(0, 10)}.zip`,
     );
 
-    // Track batch download as ZIP
     trackBatchDownload(completed.length, 'zip');
 
     addToast("success", `Downloaded ${files.length} images as ZIP`);
@@ -323,10 +319,25 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
   }, [selectedIds]);
 
   return (
-    <div className="space-y-6">
-      {/* Upload Zone */}
-      <Card>
-        <CardContent className="p-6">
+    <div className="space-y-8">
+      {/* Hero Section - Enhanced */}
+      <div className="text-center space-y-4 max-w-2xl mx-auto slide-in-up">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+          <Sparkles className="w-4 h-4" />
+          <span>Batch Process</span>
+        </div>
+        <h1 className="font-heading text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+          Multiple Images at Once
+        </h1>
+        <p className="text-muted-foreground text-base leading-relaxed">
+          Upload several images and we'll remove watermarks from all of them.
+          Download individually or as a tidy ZIP file.
+        </p>
+      </div>
+
+      {/* Upload Zone - Enhanced */}
+      <Card className="shadow-sm scale-in">
+        <CardContent className="p-6 sm:p-8">
           <div
             onDrop={handleDrop}
             onDragOver={(e) => {
@@ -348,11 +359,11 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
             role="button"
             aria-label="Upload multiple images"
             className={cn(
-              "relative border-2 border-dashed rounded-xl p-12 text-center cursor-pointer",
-              "transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
+              "relative border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer",
+              "transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
               isDragging
-                ? "border-primary bg-primary/10 scale-[1.01]"
-                : "border-accent hover:border-primary/50 hover:bg-card/50",
+                ? "border-primary bg-primary/5 scale-[1.01] shadow-lg"
+                : "border-border hover:border-primary/50 hover:bg-accent/30",
             )}
           >
             <input
@@ -364,69 +375,92 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
               className="hidden"
             />
 
-            <div className="space-y-4">
-              <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                <Upload className="w-10 h-10 text-primary" />
+            <div className="space-y-6">
+              <div className={cn(
+                "mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sage-gradient flex items-center justify-center shadow-md transition-transform duration-300",
+                isDragging && "scale-110 rotate-3"
+              )}>
+                <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
               </div>
               <div>
-                <p className="text-xl font-medium text-foreground">
+                <p className="text-lg sm:text-xl font-medium text-foreground">
                   Drop multiple images here
                 </p>
                 <p className="text-muted-foreground mt-2">or click to browse</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground/60 mt-3">
                   PNG, JPG, WebP supported • No limit on file count
                 </p>
               </div>
-              <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium">
-                <Sparkles className="w-4 h-4" />
-                <span>Auto-processes all images on upload</span>
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <div className="h-px w-8 sm:w-12 bg-border" />
+                <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-medium">
+                  Drag & Drop Multiple
+                </span>
+                <div className="h-px w-8 sm:w-12 bg-border" />
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Stats & Actions Bar */}
+      {/* Stats & Actions Bar - Enhanced */}
       {images.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
+        <Card className="shadow-sm fade-in">
+          <CardContent className="p-4 sm:p-5">
+            {/* Stats Pills - Better Visual Organization */}
             <div className="flex flex-wrap items-center justify-between gap-4">
-              {/* Stats */}
-              <div className="flex items-center gap-4 text-sm">
-                <span className="font-medium text-foreground">
-                  {stats.total} image(s)
-                </span>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {/* Total Count Pill */}
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/50">
+                  <Layers className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-semibold text-foreground">
+                    {stats.total} image{stats.total !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                {/* Completed Pill */}
                 {stats.completed > 0 && (
-                  <span className="flex items-center gap-1 text-green-600">
-                    <CheckCircle className="w-4 h-4" />
-                    {stats.completed} complete
-                  </span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-success/10">
+                    <CheckCircle className="w-4 h-4 text-success" />
+                    <span className="text-sm font-medium text-success">
+                      {stats.completed} complete
+                    </span>
+                  </div>
                 )}
+
+                {/* Processing Pill */}
                 {isProcessing && stats.pending > 0 && (
-                  <span className="flex items-center gap-1 text-blue-600">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Processing...
-                  </span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10">
+                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                    <span className="text-sm font-medium text-primary">
+                      Processing...
+                    </span>
+                  </div>
                 )}
+
+                {/* Failed Pill */}
                 {stats.failed > 0 && (
-                  <span className="flex items-center gap-1 text-red-600">
-                    <XCircle className="w-4 h-4" />
-                    {stats.failed} failed
-                  </span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-error/10">
+                    <XCircle className="w-4 h-4 text-error" />
+                    <span className="text-sm font-medium text-error">
+                      {stats.failed} failed
+                    </span>
+                  </div>
                 )}
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-2">
+              {/* Action Buttons */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 {selectedIds.size > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleRemoveSelected}
-                    className="text-red-500"
+                    className="text-error h-9 px-3"
                   >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Remove {selectedIds.size}
+                    <Trash2 className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-1">Remove ({selectedIds.size})</span>
+                    <span className="sm:hidden">({selectedIds.size})</span>
                   </Button>
                 )}
 
@@ -438,9 +472,10 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                     trackBatchClear(images.length);
                   }}
                   disabled={isProcessing}
+                  className="h-9 px-3"
                 >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Clear All
+                  <Trash2 className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">Clear</span>
                 </Button>
 
                 {stats.completed > 0 && (
@@ -448,9 +483,11 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                     variant="secondary"
                     size="sm"
                     onClick={handleDownloadAll}
+                    className="h-9"
                   >
-                    <Archive className="w-4 h-4 mr-1" />
-                    Download ZIP ({stats.completed})
+                    <Archive className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-1">ZIP ({stats.completed})</span>
+                    <span className="sm:hidden">({stats.completed})</span>
                   </Button>
                 )}
 
@@ -459,21 +496,26 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                     onClick={handleProcessAll}
                     disabled={isProcessing}
                     size="sm"
+                    className="h-9"
                   >
-                    <Play className="w-4 h-4 mr-1" />
-                    Process ({stats.pending})
+                    <Play className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-1">Process ({stats.pending})</span>
                   </Button>
                 )}
               </div>
             </div>
 
-            {/* Progress Bar */}
+            {/* Enhanced Progress Bar */}
             {isProcessing && (
-              <div className="mt-4">
+              <div className="mt-5 space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Processing images...</span>
+                  <span>{stats.completed} / {stats.total - stats.failed}</span>
+                </div>
                 <ProgressBar
                   value={stats.completed}
                   max={stats.total - stats.failed}
-                  showLabel
+                  showLabel={false}
                 />
               </div>
             )}
@@ -481,40 +523,76 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
         </Card>
       )}
 
-      {/* Selection Controls */}
+      {/* Selection Controls - More Prominent */}
       {images.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleSelectAll}>
-            Select All
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 fade-in">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={selectedIds.size === images.length && images.length > 0}
+              onChange={(e) => e.target.checked ? handleSelectAll() : handleDeselectAll()}
+              className="w-5 h-5 rounded-md border-border text-primary focus:ring-primary focus:ring-offset-0"
+              aria-label="Select all images"
+            />
+            <span className="text-sm font-medium text-foreground">
+              {selectedIds.size === images.length && images.length > 0
+                ? "All selected"
+                : selectedIds.size > 0
+                  ? `${selectedIds.size} selected`
+                  : "Select all"}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDeselectAll}
+            className={cn(
+              "h-8 text-xs transition-all duration-200",
+              selectedIds.size === 0 && "invisible"
+            )}
+          >
+            Clear selection
           </Button>
-          {selectedIds.size > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleDeselectAll}>
-              Deselect All
-            </Button>
-          )}
         </div>
       )}
 
-      {/* Image Grid */}
+      {/* Image Grid - Enhanced */}
       {images.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-20 h-20 rounded-full bg-accent/20 flex items-center justify-center mb-4">
-            <ImageIcon className="w-10 h-10 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center fade-in">
+          {/* Enhanced Empty State with Illustration */}
+          <div className="relative mb-8">
+            <div className="absolute inset-0 bg-primary/5 rounded-full blur-3xl" />
+            <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-gradient-to-br from-primary/10 to-accent flex items-center justify-center border border-primary/10">
+              <div className="flex items-end gap-1">
+                <FileImage className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground/30" />
+                <FileImage className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground/20 -translate-y-2" />
+                <FileImage className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground/10 -translate-y-4" />
+              </div>
+            </div>
           </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">
+          <h3 className="text-xl sm:text-2xl font-heading font-semibold text-foreground mb-3">
             No images yet
           </h3>
-          <p className="text-muted-foreground max-w-sm">
-            Drag and drop multiple images or click the upload zone above. Supports PNG, JPG, and WebP formats.
+          <p className="text-muted-foreground max-w-md leading-relaxed mb-6">
+            Drag and drop multiple images or click the upload zone above.
+            Supports PNG, JPG, and WebP formats.
           </p>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            size="lg"
+          >
+            <Upload className="w-5 h-5 mr-2" />
+            Browse Images
+          </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {images.map((item) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+          {images.map((item, index) => (
             <ImageCard
               key={item.id}
               item={item}
               isSelected={selectedIds.has(item.id)}
+              isCurrentlyProcessing={currentProcessingIndex === index}
               onToggleSelect={() => handleToggleSelect(item.id)}
               onRemove={() => handleRemove(item.id)}
               onDownload={() => handleDownload(item)}
@@ -524,10 +602,8 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
         </div>
       )}
 
-      {/* Hidden Canvas */}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Preview Modal */}
       {previewItem && (
         <ImagePreviewModal
           item={previewItem}
@@ -547,7 +623,6 @@ export function BatchProcessor(props: BatchProcessorProps) {
   );
 }
 
-// Helper functions
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -569,10 +644,10 @@ function getImageDimensions(
   });
 }
 
-// Image Card Component
 interface ImageCardProps {
   item: ImageItem;
   isSelected: boolean;
+  isCurrentlyProcessing?: boolean;
   onToggleSelect: () => void;
   onRemove: () => void;
   onDownload: () => void;
@@ -582,6 +657,7 @@ interface ImageCardProps {
 function ImageCard({
   item,
   isSelected,
+  isCurrentlyProcessing = false,
   onToggleSelect,
   onRemove,
   onDownload,
@@ -597,40 +673,40 @@ function ImageCard({
   return (
     <div
       className={cn(
-        "group relative rounded-xl overflow-hidden border-2 transition-all duration-200",
-        "bg-card shadow-md hover:shadow-lg",
+        "group relative rounded-2xl overflow-hidden border-2 transition-all duration-300",
+        "bg-card shadow-sm hover:shadow-lg card-lift",
         isSelected
           ? "border-primary ring-2 ring-primary/20"
           : "border-transparent hover:border-accent",
+        isCurrentlyProcessing && "ring-2 ring-primary/30 border-primary/50",
       )}
     >
-      {/* Selection Checkbox - expanded hit area for touch */}
+      {/* Enhanced Checkbox */}
       <button
         onClick={onToggleSelect}
         className={cn(
-          "absolute top-2 left-2 z-10 rounded-md border-2 flex items-center justify-center",
-          "transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
-          // Visual size
-          "w-6 h-6",
-          // Expanded hit area for 44px minimum touch target
-          "-m-4 p-4",
+          "absolute top-2.5 left-2.5 z-20 rounded-lg border-2 flex items-center justify-center",
+          "transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
+          "w-5 h-5 sm:w-6 sm:h-6 -m-[0.375rem] p-[0.375rem]",
           isSelected
-            ? "bg-primary border-primary text-primary-foreground"
-            : "bg-white/80 dark:bg-black/50 border-accent-foreground/30 hover:border-primary hover:bg-white dark:hover:bg-black/70",
+            ? "bg-primary border-primary text-primary-foreground scale-105"
+            : "bg-white/95 border-border hover:border-primary hover:bg-white",
         )}
         aria-label={isSelected ? "Deselect image" : "Select image"}
       >
-        <span className="pointer-events-none">
-          {isSelected && <Check className="w-4 h-4" />}
+        <span className="pointer-events-none flex items-center justify-center">
+          {isSelected && <Check className="w-3 h-3 sm:w-4 sm:h-4" />}
         </span>
       </button>
 
-      {/* Status Badge - top right */}
-      <StatusBadge status={item.status} />
+      <StatusBadge status={item.status} isCurrentlyProcessing={isCurrentlyProcessing} />
 
-      {/* Image */}
+      {/* Image Container - Enhanced */}
       <div
-        className="aspect-square cursor-pointer relative focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 rounded-t-xl"
+        className={cn(
+          "aspect-square cursor-pointer relative focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-2 rounded-t-2xl overflow-hidden",
+          item.status === "processing" || isCurrentlyProcessing ? "opacity-70" : ""
+        )}
         onClick={onPreview}
         tabIndex={0}
         role="button"
@@ -645,37 +721,62 @@ function ImageCard({
         <img
           src={displayImage}
           alt={item.file.name}
-          className="w-full h-full object-cover rounded-t-xl"
+          className={cn(
+            "w-full h-full object-cover transition-transform duration-500",
+            "group-hover:scale-105 group-focus-visible:scale-105"
+          )}
           loading="lazy"
         />
 
+        {/* Processing Overlay */}
+        {(item.status === "processing" || isCurrentlyProcessing) && (
+          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            </div>
+          </div>
+        )}
+
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none rounded-t-xl">
-          <ZoomIn className="w-8 h-8 text-white" />
+        <div className={cn(
+          "absolute inset-0 bg-black/0 flex items-center justify-center",
+          "transition-all duration-300 ease-out",
+          "group-hover:bg-black/20 group-hover:opacity-100",
+          (item.status === "processing" || isCurrentlyProcessing) ? "opacity-0" : "opacity-0"
+        )}>
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/90 flex items-center justify-center shadow-sm transform scale-90 group-hover:scale-100 transition-transform duration-300">
+            <ZoomIn className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
+          </div>
         </div>
       </div>
 
-      {/* Info Bar */}
-      <div className="p-2">
+      {/* Card Footer - Enhanced */}
+      <div className="p-2.5 sm:p-3 border-t border-border/60">
         <p
-          className="text-xs font-medium text-foreground truncate"
+          className="text-xs sm:text-sm font-medium text-foreground truncate"
           title={item.file.name}
         >
           {item.file.name}
         </p>
-        <p className="text-xs text-muted-foreground">
-          {item.width} × {item.height}
+        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+          <span>{item.width} × {item.height}</span>
+          {item.status === "completed" && (
+            <>
+              <span>•</span>
+              <CheckCircle className="w-3 h-3 text-success" />
+            </>
+          )}
         </p>
       </div>
 
-      {/* Action Buttons */}
-      <div className="px-2 pb-2 flex gap-1">
+      {/* Action Buttons - Enhanced */}
+      <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3 flex gap-1.5">
         {item.status === "completed" && (
           <>
             <Button
               variant="ghost"
               size="sm"
-              className="flex-1 h-8 text-xs"
+              className="flex-1 h-8 sm:h-9 text-[10px] sm:text-xs font-medium"
               onMouseDown={() => setShowProcessed(false)}
               onMouseUp={() => setShowProcessed(true)}
               onMouseLeave={() => setShowProcessed(true)}
@@ -687,57 +788,73 @@ function ImageCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2"
+              className="h-8 sm:h-9 w-8 sm:w-9 p-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onDownload();
               }}
+              aria-label="Download image"
             >
               <Download className="w-4 h-4" />
             </Button>
           </>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-red-500 hover:text-red-600 hover:bg-red-50"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        {item.status === "error" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 h-8 sm:h-9 text-[10px] sm:text-xs font-medium text-error"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            Remove Failed
+          </Button>
+        )}
+        {item.status !== "error" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 sm:h-9 w-8 sm:w-9 p-0 text-error hover:text-error hover:bg-error/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            aria-label="Remove image"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
 }
 
-// Status Badge Component
-function StatusBadge({ status }: { status: ImageItem["status"] }) {
+function StatusBadge({ status, isCurrentlyProcessing }: { status: ImageItem["status"]; isCurrentlyProcessing?: boolean }) {
   const config = {
     pending: {
       icon: <Clock className="w-3 h-3" />,
-      bg: "bg-amber-100",
-      text: "text-amber-700",
+      bg: "bg-warning/15",
+      text: "text-warning",
       label: "Pending",
     },
     processing: {
       icon: <Loader2 className="w-3 h-3 animate-spin" />,
-      bg: "bg-blue-100",
-      text: "text-blue-700",
+      bg: "bg-primary/15",
+      text: "text-primary",
       label: "Processing",
     },
     completed: {
       icon: <CheckCircle className="w-3 h-3" />,
-      bg: "bg-green-100",
-      text: "text-green-700",
+      bg: "bg-success/15",
+      text: "text-success",
       label: "Complete",
     },
     error: {
       icon: <AlertCircle className="w-3 h-3" />,
-      bg: "bg-red-100",
-      text: "text-red-700",
+      bg: "bg-error/15",
+      text: "text-error",
       label: "Failed",
     },
   };
@@ -747,19 +864,19 @@ function StatusBadge({ status }: { status: ImageItem["status"] }) {
   return (
     <div
       className={cn(
-        "absolute top-2 right-2 z-10 px-2 py-1 rounded-full flex items-center gap-1",
-        "text-xs font-medium",
+        "absolute top-2.5 right-2.5 z-10 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full flex items-center gap-1 sm:gap-1.5",
+        "text-[10px] sm:text-xs font-medium shadow-sm backdrop-blur-sm",
         bg,
         text,
+        isCurrentlyProcessing && "animate-pulse"
       )}
     >
       {icon}
-      <span>{label}</span>
+      <span className="hidden sm:inline">{label}</span>
     </div>
   );
 }
 
-// Preview Modal Component
 interface ImagePreviewModalProps {
   item: ImageItem;
   onClose: () => void;
@@ -787,32 +904,47 @@ function ImagePreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-2 sm:p-4 animate-in fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Preview image"
     >
       <div
-        className="relative max-w-6xl max-h-full"
+        className="relative max-w-6xl max-h-full w-full"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Image */}
         <img
           src={displayImage}
           alt={item.file.name}
-          className="max-w-full max-h-[90vh] object-contain rounded-lg"
+          className="w-full max-h-[85vh] sm:max-h-[90vh] object-contain rounded-2xl shadow-2xl"
         />
 
-        {/* Controls */}
+        {/* Status Badge */}
+        <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md text-white text-sm font-medium">
+          {item.file.name}
+        </div>
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-black/60 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          aria-label="Close preview"
+        >
+          <X className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
+
+        {/* Controls Bar */}
         {item.processedDataUrl && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/70 backdrop-blur-sm rounded-full px-6 py-3">
+          <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 bg-black/70 backdrop-blur-xl rounded-2xl px-4 py-3 sm:px-6 sm:py-4 shadow-lg max-w-[95vw] overflow-x-auto">
             <button
               onClick={() => setShowOriginal(true)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-colors",
+                "px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap",
                 showOriginal
-                  ? "bg-white text-black"
-                  : "text-white hover:bg-white/20",
+                  ? "bg-white text-foreground shadow-sm"
+                  : "text-white hover:bg-white/10",
               )}
             >
               Original
@@ -820,29 +952,29 @@ function ImagePreviewModal({
             <button
               onClick={() => setShowOriginal(false)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-colors",
+                "px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap",
                 !showOriginal
-                  ? "bg-white text-black"
-                  : "text-white hover:bg-white/20",
+                  ? "bg-white text-foreground shadow-sm"
+                  : "text-white hover:bg-white/10",
               )}
             >
               Processed
             </button>
-            <div className="w-px h-6 bg-white/30" />
-            <Button size="sm" onClick={onDownload}>
-              <Download className="w-4 h-4 mr-1" />
-              Download
+            <div className="w-px h-6 bg-white/20 flex-shrink-0" />
+            <Button
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDownload();
+              }}
+              variant="default"
+              className="flex-shrink-0"
+            >
+              <Download className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Download</span>
             </Button>
           </div>
         )}
-
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-12 h-12 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90 transition-colors"
-        >
-          <X className="w-6 h-6" />
-        </button>
       </div>
     </div>
   );
