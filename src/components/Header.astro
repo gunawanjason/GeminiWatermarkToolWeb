@@ -11,6 +11,7 @@ const { pathname } = Astro.url;
 ---
 
 <header
+  role="banner"
   class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 >
   <div class="max-w-5xl mx-auto flex h-16 items-center justify-between px-4">
@@ -50,7 +51,7 @@ const { pathname } = Astro.url;
       </div>
     </a>
 
-    <nav class="flex items-center gap-1">
+    <nav role="navigation" aria-label="Main navigation" class="flex items-center gap-1">
       {
         navItems.map(({ href, label, icon: Icon }) => {
           const isActive =

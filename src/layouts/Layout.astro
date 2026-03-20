@@ -20,7 +20,7 @@ const {
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
 
@@ -33,6 +33,24 @@ const {
     />
 
     <title>{title}</title>
+
+    <style>
+      a.skip-to-content {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: var(--color-primary);
+        color: var(--color-primary-foreground);
+        padding: 8px 16px;
+        text-decoration: none;
+        border-radius: 0 0 4px 0;
+        z-index: 100;
+        transition: top 0.2s;
+      }
+      a.skip-to-content:focus {
+        top: 0;
+      }
+    </style>
 
     <!-- Google tag (gtag.js) -->
     <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-0VYTHHEH0J"></script>
@@ -67,8 +85,9 @@ const {
     class="min-h-screen flex flex-col bg-background font-sans antialiased text-foreground"
     transition:animate="none"
   >
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
     <Header />
-    <main class="flex-1 w-full max-w-5xl mx-auto px-4 py-8">
+    <main id="main-content" class="flex-1 w-full max-w-5xl mx-auto px-4 py-8" tabindex="-1">
       <slot />
     </main>
     <Footer />

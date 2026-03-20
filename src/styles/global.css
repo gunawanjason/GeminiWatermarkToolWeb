@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 /* Coffee Shop Theme - Custom Properties */
+/* @theme is a Tailwind CSS v4 at-rule */
 @theme {
   --color-background: #fdfcfb; /* Nature White */
   --color-foreground: #4a4036; /* Brownish Text */
@@ -39,12 +40,28 @@ body {
   min-height: 100vh;
 }
 
-/* Smooth animations */
-* {
+/* Smooth animations - only on interactive elements */
+button, a, input, [role="button"], [tabindex] {
   transition-property:
     color, background-color, border-color, opacity, transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Disable auto-scroll and smooth behaviors */
+  html {
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Selection color */

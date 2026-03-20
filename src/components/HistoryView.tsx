@@ -26,6 +26,7 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
   const [previewItem, setPreviewItem] = React.useState<HistoryItem | null>(
     null,
   );
+  const [showClearConfirm, setShowClearConfirm] = React.useState(false);
   const { addToast } = useToast();
 
   const loadHistory = React.useCallback(async () => {
@@ -96,7 +97,11 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
   );
 
   const handleClearAll = React.useCallback(async () => {
-    if (!confirm("Are you sure you want to clear all history?")) return;
+    setShowClearConfirm(true);
+  }, []);
+
+  const confirmClearAll = React.useCallback(async () => {
+    setShowClearConfirm(false);
 
     try {
       const itemCount = items.length;
@@ -161,15 +166,34 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
         <h3 className="text-lg font-medium text-foreground mb-2">
           No history yet
         </h3>
-        <p className="text-muted-foreground">
-          Processed images will appear here
+        <p className="text-muted-foreground mb-6 max-w-sm">
+          Processed images are automatically saved here. You can download them anytime or clear your history.
         </p>
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+        >
+          Process your first image
+        </a>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Clear All Confirmation Modal */}
+      {showClearConfirm && (
+        <ConfirmDialog
+          title="Clear All History"
+          message={`Are you sure you want to clear all ${items.length} item(s) from history? This action cannot be undone.`}
+          confirmLabel="Clear All"
+          cancelLabel="Cancel"
+          onConfirm={confirmClearAll}
+          onCancel={() => setShowClearConfirm(false)}
+          isDestructive
+        />
+      )}
+
       {/* Actions Bar */}
       <Card>
         <CardContent className="p-4">
@@ -255,24 +279,37 @@ function HistoryCard({
     <div className="group relative rounded-xl overflow-hidden border bg-card shadow-md hover:shadow-lg transition-all duration-200">
       {/* Image */}
       <div
-        className="aspect-square cursor-pointer relative"
+        className="aspect-square cursor-pointer relative focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 rounded-t-xl"
         onClick={onPreview}
+        tabIndex={0}
+        role="button"
+        aria-label={`Preview ${item.fileName}`}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onPreview();
+          }
+        }}
       >
         <img
           src={showOriginal ? item.originalDataUrl : item.processedDataUrl}
           alt={item.fileName}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover rounded-t-xl"
+          loading="lazy"
         />
 
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none rounded-t-xl">
           <Eye className="w-8 h-8 text-white" />
         </div>
       </div>
 
       {/* Info Bar */}
       <div className="p-2">
-        <p className="text-xs font-medium text-foreground truncate">
+        <p
+          className="text-xs font-medium text-foreground truncate"
+          title={item.fileName}
+        >
           {item.fileName}
         </p>
         <p className="text-xs text-muted-foreground">
@@ -289,6 +326,8 @@ function HistoryCard({
           onMouseDown={() => setShowOriginal(true)}
           onMouseUp={() => setShowOriginal(false)}
           onMouseLeave={() => setShowOriginal(false)}
+          onTouchStart={() => setShowOriginal(true)}
+          onTouchEnd={() => setShowOriginal(false)}
         >
           {showOriginal ? "Original" : "Compare"}
         </Button>
@@ -344,6 +383,9 @@ function HistoryPreviewModal({
     <div
       className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Preview image"
     >
       <div
         className="relative max-w-5xl max-h-full"
@@ -361,7 +403,9 @@ function HistoryPreviewModal({
             onMouseDown={() => setShowOriginal(true)}
             onMouseUp={() => setShowOriginal(false)}
             onMouseLeave={() => setShowOriginal(false)}
-            className="px-4 py-2 text-white text-sm font-medium rounded-full hover:bg-white/20"
+            onTouchStart={() => setShowOriginal(true)}
+            onTouchEnd={() => setShowOriginal(false)}
+            className="px-4 py-2 text-white text-sm font-medium rounded-full hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             {showOriginal ? "Original" : "Hold to compare"}
           </button>
@@ -379,6 +423,82 @@ function HistoryPreviewModal({
         >
           ✕
         </button>
+      </div>
+    </div>
+  );
+}
+
+// Confirm Dialog Component
+interface ConfirmDialogProps {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isDestructive?: boolean;
+}
+
+function ConfirmDialog({
+  title,
+  message,
+  confirmLabel,
+  cancelLabel,
+  onConfirm,
+  onCancel,
+  isDestructive = false,
+}: ConfirmDialogProps) {
+  React.useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [onCancel]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+      aria-describedby="confirm-dialog-message"
+    >
+      <div
+        className="bg-card rounded-xl shadow-xl max-w-md w-full p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3
+          id="confirm-dialog-title"
+          className="text-lg font-semibold text-foreground mb-2"
+        >
+          {title}
+        </h3>
+        <p
+          id="confirm-dialog-message"
+          className="text-sm text-muted-foreground mb-6"
+        >
+          {message}
+        </p>
+        <div className="flex items-center justify-end gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="focus-visible:ring-2 focus-visible:ring-primary/50"
+          >
+            {cancelLabel}
+          </Button>
+          <Button
+            size="sm"
+            onClick={onConfirm}
+            className={isDestructive ? "bg-red-600 hover:bg-red-700 text-white" : ""}
+            autoFocus
+          >
+            {confirmLabel}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -278,12 +278,21 @@ function WatermarkRemoverContent() {
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label="Upload image"
               className={`
-                relative border-2 border-dashed rounded-xl p-16 text-center cursor-pointer
-                transition-all duration-300 ease-out
+                relative border-2 border-dashed rounded-xl p-12 sm:p-16 text-center cursor-pointer
+                transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2
                 ${
                   isDragging
-                    ? "border-primary bg-primary/10 scale-[1.02]"
+                    ? "border-primary bg-primary/10 scale-[1.01]"
                     : "border-accent hover:border-primary/50 hover:bg-card/50"
                 }
               `}
@@ -326,8 +335,11 @@ function WatermarkRemoverContent() {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                   <ImageIcon className="w-5 h-5 text-primary" />
                 </div>
-                <div>
-                  <p className="font-medium text-foreground truncate max-w-[200px]">
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="font-medium text-foreground truncate"
+                    title={fileName}
+                  >
                     {fileName}
                   </p>
                   {imageSize && (
@@ -424,7 +436,7 @@ function WatermarkRemoverContent() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Side by Side Preview */}
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-[1fr_auto_1fr] gap-2 md:gap-4 items-start">
               {/* Original */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -433,31 +445,42 @@ function WatermarkRemoverContent() {
                   </span>
                 </div>
                 <div
-                  className="relative rounded-lg overflow-hidden bg-black/5 cursor-pointer group"
+                  className="relative rounded-lg overflow-hidden bg-black/5 cursor-pointer group focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2"
                   onClick={() => {
                 setShowOriginal(true);
                 setShowZoom(true);
                 trackZoomView(fileName);
               }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label="Zoom original image"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setShowZoom(true);
+                      setShowOriginal(true);
+                      trackZoomView(fileName);
+                    }
+                  }}
                 >
                   <img
                     src={originalImage}
                     alt="Original"
                     className="w-full h-auto max-h-[350px] object-contain"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                     <ZoomIn className="w-8 h-8 text-white" />
                   </div>
                   {/* Watermark indicator */}
-                  <div className="absolute top-2 left-2 px-2 py-1 bg-red-500/80 text-white text-xs rounded font-medium">
+                  <div className="absolute top-2 left-2 px-2 py-1 bg-red-500/80 text-white text-xs rounded-md font-medium">
                     Has Watermark
                   </div>
                 </div>
               </div>
 
-              {/* Arrow between */}
-              <div className="hidden md:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg">
+              {/* Arrow between - now properly positioned in grid */}
+              <div className="hidden md:flex items-center justify-center py-12">
+                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shrink-0">
                   <ArrowRight className="w-5 h-5" />
                 </div>
               </div>
@@ -470,23 +493,34 @@ function WatermarkRemoverContent() {
                   </span>
                 </div>
                 <div
-                  className="relative rounded-lg overflow-hidden bg-black/5 cursor-pointer group"
+                  className="relative rounded-lg overflow-hidden bg-black/5 cursor-pointer group focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2"
                   onClick={() => {
                   setShowOriginal(false);
                   setShowZoom(true);
                   trackZoomView(fileName);
                 }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label="Zoom processed image"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setShowZoom(true);
+                      setShowOriginal(false);
+                      trackZoomView(fileName);
+                    }
+                  }}
                 >
                   <img
                     src={processedImage}
                     alt="Processed"
                     className="w-full h-auto max-h-[350px] object-contain"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                     <ZoomIn className="w-8 h-8 text-white" />
                   </div>
                   {/* Clean indicator */}
-                  <div className="absolute top-2 left-2 px-2 py-1 bg-green-500/80 text-white text-xs rounded font-medium flex items-center gap-1">
+                  <div className="absolute top-2 left-2 px-2 py-1 bg-green-500/80 text-white text-xs rounded-md font-medium flex items-center gap-1">
                     <Check className="w-3 h-3" />
                     Clean
                   </div>
@@ -512,6 +546,9 @@ function WatermarkRemoverContent() {
         <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           onClick={() => setShowZoom(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image comparison zoom"
         >
           <div
             className="relative max-w-6xl max-h-full"
@@ -530,7 +567,7 @@ function WatermarkRemoverContent() {
                   setShowOriginal(true);
                   trackCompareToggle(true);
                 }}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
                   showOriginal
                     ? "bg-white text-black"
                     : "text-white hover:bg-white/20"
@@ -543,7 +580,7 @@ function WatermarkRemoverContent() {
                   setShowOriginal(false);
                   trackCompareToggle(false);
                 }}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
                   !showOriginal
                     ? "bg-white text-black"
                     : "text-white hover:bg-white/20"
@@ -561,7 +598,8 @@ function WatermarkRemoverContent() {
             {/* Close button */}
             <button
               onClick={() => setShowZoom(false)}
-              className="absolute top-4 right-4 w-12 h-12 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90 transition-colors"
+              className="absolute top-4 right-4 w-12 h-12 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              aria-label="Close zoom view"
             >
               <X className="w-6 h-6" />
             </button>

@@ -338,11 +338,20 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
               setIsDragging(false);
             }}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Upload multiple images"
             className={cn(
               "relative border-2 border-dashed rounded-xl p-12 text-center cursor-pointer",
-              "transition-all duration-300 ease-out",
+              "transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
               isDragging
-                ? "border-primary bg-primary/10 scale-[1.02]"
+                ? "border-primary bg-primary/10 scale-[1.01]"
                 : "border-accent hover:border-primary/50 hover:bg-card/50",
             )}
           >
@@ -390,7 +399,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                 {stats.completed > 0 && (
                   <span className="flex items-center gap-1 text-green-600">
                     <CheckCircle className="w-4 h-4" />
-                    {stats.completed} done
+                    {stats.completed} complete
                   </span>
                 )}
                 {isProcessing && stats.pending > 0 && (
@@ -431,7 +440,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                   disabled={isProcessing}
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
-                  Clear
+                  Clear All
                 </Button>
 
                 {stats.completed > 0 && (
@@ -495,8 +504,8 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
           <h3 className="text-lg font-medium text-foreground mb-2">
             No images yet
           </h3>
-          <p className="text-muted-foreground">
-            Drag and drop images or click to upload
+          <p className="text-muted-foreground max-w-sm">
+            Drag and drop multiple images or click the upload zone above. Supports PNG, JPG, and WebP formats.
           </p>
         </div>
       ) : (
@@ -595,18 +604,25 @@ function ImageCard({
           : "border-transparent hover:border-accent",
       )}
     >
-      {/* Selection Checkbox */}
+      {/* Selection Checkbox - expanded hit area for touch */}
       <button
         onClick={onToggleSelect}
         className={cn(
-          "absolute top-2 left-2 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center",
-          "transition-all duration-200",
+          "absolute top-2 left-2 z-10 rounded-md border-2 flex items-center justify-center",
+          "transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
+          // Visual size
+          "w-6 h-6",
+          // Expanded hit area for 44px minimum touch target
+          "-m-4 p-4",
           isSelected
-            ? "bg-primary border-primary text-white"
-            : "bg-white/80 border-accent/50 hover:border-primary",
+            ? "bg-primary border-primary text-primary-foreground"
+            : "bg-white/80 dark:bg-black/50 border-accent-foreground/30 hover:border-primary hover:bg-white dark:hover:bg-black/70",
         )}
+        aria-label={isSelected ? "Deselect image" : "Select image"}
       >
-        {isSelected && <Check className="w-4 h-4" />}
+        <span className="pointer-events-none">
+          {isSelected && <Check className="w-4 h-4" />}
+        </span>
       </button>
 
       {/* Status Badge - top right */}
@@ -614,24 +630,37 @@ function ImageCard({
 
       {/* Image */}
       <div
-        className="aspect-square cursor-pointer relative"
+        className="aspect-square cursor-pointer relative focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 rounded-t-xl"
         onClick={onPreview}
+        tabIndex={0}
+        role="button"
+        aria-label={`Preview ${item.file.name}`}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onPreview();
+          }
+        }}
       >
         <img
           src={displayImage}
           alt={item.file.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover rounded-t-xl"
+          loading="lazy"
         />
 
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none rounded-t-xl">
           <ZoomIn className="w-8 h-8 text-white" />
         </div>
       </div>
 
       {/* Info Bar */}
       <div className="p-2">
-        <p className="text-xs font-medium text-foreground truncate">
+        <p
+          className="text-xs font-medium text-foreground truncate"
+          title={item.file.name}
+        >
           {item.file.name}
         </p>
         <p className="text-xs text-muted-foreground">
@@ -650,6 +679,8 @@ function ImageCard({
               onMouseDown={() => setShowProcessed(false)}
               onMouseUp={() => setShowProcessed(true)}
               onMouseLeave={() => setShowProcessed(true)}
+              onTouchStart={() => setShowProcessed(false)}
+              onTouchEnd={() => setShowProcessed(true)}
             >
               {!showProcessed ? "Original" : "Compare"}
             </Button>
@@ -701,13 +732,13 @@ function StatusBadge({ status }: { status: ImageItem["status"] }) {
       icon: <CheckCircle className="w-3 h-3" />,
       bg: "bg-green-100",
       text: "text-green-700",
-      label: "Done",
+      label: "Complete",
     },
     error: {
       icon: <AlertCircle className="w-3 h-3" />,
       bg: "bg-red-100",
       text: "text-red-700",
-      label: "Error",
+      label: "Failed",
     },
   };
 
@@ -758,6 +789,9 @@ function ImagePreviewModal({
     <div
       className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Preview image"
     >
       <div
         className="relative max-w-6xl max-h-full"
