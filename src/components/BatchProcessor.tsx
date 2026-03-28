@@ -15,8 +15,8 @@ import {
   Loader2,
   Check,
   Layers,
-  FileImage,
   ShieldCheck,
+  Images,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Card, CardContent } from "./ui/Card";
@@ -52,12 +52,14 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
   const [uploadedFiles, setUploadedFiles] = React.useState<File[]>([]);
   const [currentProcessingIndex, setCurrentProcessingIndex] =
     React.useState<number>(-1);
+  const [mounted, setMounted] = React.useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const { addToast } = useToast();
 
   React.useEffect(() => {
+    setMounted(true);
     trackBatchModeUse();
   }, []);
 
@@ -333,7 +335,9 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
 
   return (
     <div className="space-y-8">
-      <div className="text-center space-y-4 max-w-2xl mx-auto slide-in-up">
+      <div
+        className={`text-center space-y-4 max-w-2xl mx-auto ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
+      >
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
           <Sparkles className="w-4 h-4" />
           <span>Batch Process</span>
@@ -363,7 +367,10 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
         </div>
       </div>
 
-      <Card className="shadow-sm scale-in">
+      <Card
+        className="shadow-sm animate-bounce-in"
+        style={{ animationDelay: "200ms" }}
+      >
         <CardContent className="p-6 sm:p-8">
           <div
             onDrop={handleDrop}
@@ -406,7 +413,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
               <div
                 className={cn(
                   "mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sage-gradient flex items-center justify-center shadow-md transition-all duration-300",
-                  isDragging && "scale-110 rotate-3",
+                  isDragging ? "scale-110 wiggle" : "upload-icon-idle",
                 )}
               >
                 <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
@@ -419,7 +426,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                 </p>
                 <p className="text-muted-foreground mt-2">or click to browse</p>
                 <p className="text-xs sm:text-sm text-muted-foreground/60 mt-3">
-                  PNG, JPG, WebP supported • No limit on file count
+                  PNG, JPG, WebP supported · No limit on file count
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 pt-2">
@@ -435,10 +442,11 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
       </Card>
 
       {images.length > 0 && (
-        <Card className="shadow-sm fade-in">
+        <Card className="shadow-sm animate-in slide-in-from-bottom">
           <CardContent className="p-4 sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3">                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/10">
                   <Layers className="w-4 h-4 text-primary" />
                   <span className="text-sm font-semibold text-primary">
                     {stats.total} image{stats.total !== 1 ? "s" : ""}
@@ -446,7 +454,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                 </div>
 
                 {stats.completed > 0 && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-success/10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-success/10 border border-success/10">
                     <CheckCircle className="w-4 h-4 text-success" />
                     <span className="text-sm font-medium text-success">
                       {stats.completed} complete
@@ -455,7 +463,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                 )}
 
                 {isProcessing && stats.pending > 0 && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-warning/10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/10">
                     <Loader2 className="w-4 h-4 text-warning animate-spin" />
                     <span className="text-sm font-medium text-warning">
                       Processing...
@@ -464,7 +472,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                 )}
 
                 {stats.failed > 0 && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-error/10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-error/10 border border-error/10">
                     <XCircle className="w-4 h-4 text-error" />
                     <span className="text-sm font-medium text-error">
                       {stats.failed} failed
@@ -508,7 +516,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                     variant="secondary"
                     size="sm"
                     onClick={handleDownloadAll}
-                    className="min-h-[44px]"
+                    className="min-h-[44px] btn-shine"
                   >
                     <Archive className="w-4 h-4" />
                     <span className="hidden sm:inline ml-1">
@@ -523,7 +531,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
                     onClick={handleProcessAll}
                     disabled={isProcessing}
                     size="sm"
-                    className="min-h-[44px]"
+                    className="min-h-[44px] shadow-md shadow-primary/20"
                   >
                     <Play className="w-4 h-4" />
                     <span className="hidden sm:inline ml-1">
@@ -554,7 +562,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
       )}
 
       {images.length > 0 && (
-        <div className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-muted/30 border border-border/30 fade-in">
+        <div className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-muted/30 border border-border/30 animate-in slide-in-from-bottom">
           <div className="flex items-center gap-3">
             <button
               onClick={() =>
@@ -598,15 +606,11 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
       )}
 
       {images.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center fade-in">
+        <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center animate-in slide-in-from-bottom">
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-primary/5 rounded-full blur-3xl" />
             <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-gradient-to-br from-primary/10 to-accent flex items-center justify-center border border-primary/10">
-              <div className="flex items-end gap-1">
-                <FileImage className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground/30" />
-                <FileImage className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground/20 -translate-y-2" />
-                <FileImage className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground/10 -translate-y-4" />
-              </div>
+              <Images className="w-12 h-12 sm:w-14 sm:h-14 text-primary/30" />
             </div>
           </div>
           <h3 className="text-xl sm:text-2xl font-heading font-semibold text-foreground mb-3">
@@ -619,24 +623,30 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
           <Button
             onClick={() => fileInputRef.current?.click()}
             size="lg"
+            className="shadow-md shadow-primary/20"
           >
             <Upload className="w-5 h-5 mr-2" />
             Browse Images
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
           {images.map((item, index) => (
-            <ImageCard
+            <div
               key={item.id}
-              item={item}
-              isSelected={selectedIds.has(item.id)}
-              isCurrentlyProcessing={currentProcessingIndex === index}
-              onToggleSelect={() => handleToggleSelect(item.id)}
-              onRemove={() => handleRemove(item.id)}
-              onDownload={() => handleDownload(item)}
-              onPreview={() => setPreviewItem(item)}
-            />
+              className="animate-in slide-in-from-bottom"
+              style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+            >
+              <ImageCard
+                item={item}
+                isSelected={selectedIds.has(item.id)}
+                isCurrentlyProcessing={currentProcessingIndex === index}
+                onToggleSelect={() => handleToggleSelect(item.id)}
+                onRemove={() => handleRemove(item.id)}
+                onDownload={() => handleDownload(item)}
+                onPreview={() => setPreviewItem(item)}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -713,11 +723,12 @@ function ImageCard({
     <div
       className={cn(
         "group relative rounded-2xl overflow-hidden border-2 transition-all duration-300",
-        "bg-card shadow-sm hover:shadow-lg card-lift",
+        "bg-card shadow-sm hover:shadow-lg card-lift ring-1 ring-black/[0.03]",
         isSelected
           ? "border-primary ring-2 ring-primary/20"
           : "border-transparent hover:border-border",
         isCurrentlyProcessing && "ring-2 ring-primary/30 border-primary/50",
+        item.status === "completed" && "ring-1 ring-success/20",
       )}
     >
       <button
@@ -773,7 +784,7 @@ function ImageCard({
 
         {(item.status === "processing" || isCurrentlyProcessing) && (
           <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
               <Loader2 className="w-6 h-6 text-primary animate-spin" />
             </div>
           </div>
@@ -789,7 +800,7 @@ function ImageCard({
               : "opacity-0 group-hover:opacity-100",
           )}
         >
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/90 flex items-center justify-center shadow-sm transform scale-90 group-hover:scale-100 transition-transform duration-300">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm transform scale-90 group-hover:scale-100 transition-transform duration-300">
             <ZoomIn className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
           </div>
         </div>
@@ -955,20 +966,20 @@ function ImagePreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-2 sm:p-4 animate-in fade-in"
+      className="fixed inset-0 z-50 bg-black/90 modal-backdrop flex items-center justify-center p-2 sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Preview image"
     >
       <div
-        className="relative max-w-6xl max-h-full w-full"
+        className="relative max-w-6xl max-h-full w-full animate-in slide-in-from-bottom"
         onClick={(e) => e.stopPropagation()}
       >
         <img
           src={displayImage}
           alt={item.file.name}
-          className="w-full max-h-[80vh] sm:max-h-[90vh] object-contain rounded-xl sm:rounded-2xl shadow-2xl animate-in scale-in"
+          className="w-full max-h-[80vh] sm:max-h-[90vh] object-contain rounded-xl sm:rounded-2xl shadow-2xl animate-flip-in"
         />
 
         <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-black/60 backdrop-blur-md text-white text-xs sm:text-sm font-medium max-w-[70vw] truncate">
@@ -988,7 +999,7 @@ function ImagePreviewModal({
             <button
               onClick={() => setShowOriginal(true)}
               className={cn(
-                "px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px]",
+                "px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px]",
                 showOriginal
                   ? "bg-white text-foreground shadow-sm"
                   : "text-white hover:bg-white/10",
@@ -999,7 +1010,7 @@ function ImagePreviewModal({
             <button
               onClick={() => setShowOriginal(false)}
               className={cn(
-                "px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px]",
+                "px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px]",
                 !showOriginal
                   ? "bg-white text-foreground shadow-sm"
                   : "text-white hover:bg-white/10",
@@ -1015,7 +1026,7 @@ function ImagePreviewModal({
                 onDownload();
               }}
               variant="default"
-              className="flex-shrink-0 min-h-[44px]"
+              className="flex-shrink-0 min-h-[44px] btn-shine"
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline ml-1">Download</span>

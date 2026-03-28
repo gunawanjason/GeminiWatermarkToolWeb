@@ -45,6 +45,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -151,6 +152,28 @@ button, a, input, [role="button"], [tabindex] {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -269,6 +292,174 @@ button, a, input, [role="button"], [tabindex] {
   }
 }
 
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes springPop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes flipIn {
+  0% {
+    opacity: 0;
+    transform: perspective(600px) rotateX(8deg) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(600px) rotateX(0) scale(1);
+  }
+}
+
+@keyframes successBurst {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(127, 169, 155, 0.5);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 16px rgba(127, 169, 155, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(127, 169, 155, 0);
+  }
+}
+
+@keyframes btnShine {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-3deg); }
+  40% { transform: rotate(3deg); }
+  60% { transform: rotate(-2deg); }
+  80% { transform: rotate(2deg); }
+}
+
+@keyframes uploadIdle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes heroEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroStagger {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.8;
+  }
+}
+
+@keyframes orbRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cardShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
 .animate-in {
   animation-duration: 350ms;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -277,6 +468,14 @@ button, a, input, [role="button"], [tabindex] {
 
 .slide-in-from-right-full {
   animation-name: slideInFromRight;
+}
+
+.slide-in-from-bottom {
+  animation-name: slideInFromBottom;
+}
+
+.slide-in-from-left {
+  animation-name: slideInFromLeft;
 }
 
 .fade-in {
@@ -321,6 +520,112 @@ button, a, input, [role="button"], [tabindex] {
 
 .slide-down {
   animation: slideDown 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-bounce-in {
+  animation: bounceIn 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-spring {
+  animation: springPop 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-flip-in {
+  animation: flipIn 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.success-burst {
+  animation: successBurst 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-shine {
+  background-size: 200% auto;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 65%,
+    transparent 100%
+  );
+}
+
+.btn-shine:hover {
+  animation: btnShine 1.2s ease-in-out;
+}
+
+.wiggle {
+  animation: wiggle 400ms ease-in-out;
+}
+
+.upload-icon-idle {
+  animation: uploadIdle 2.5s ease-in-out infinite;
+}
+
+.hero-enter {
+  animation: heroEnter 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-enter > *:nth-child(1) {
+  animation: heroStagger 500ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
+}
+
+.hero-enter > *:nth-child(2) {
+  animation: heroStagger 500ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+}
+
+.hero-enter > *:nth-child(3) {
+  animation: heroStagger 500ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both;
+}
+
+.hero-enter > *:nth-child(4) {
+  animation: heroStagger 500ms cubic-bezier(0.16, 1, 0.3, 1) 340ms both;
+}
+
+.modal-backdrop {
+  animation: modalIn 250ms ease-out both;
+}
+
+.card-success-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-success-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(127, 169, 155, 0.06) 45%,
+    rgba(127, 169, 155, 0.1) 50%,
+    rgba(127, 169, 155, 0.06) 55%,
+    transparent 60%
+  );
+  background-size: 250% 100%;
+  animation: cardShimmer 2s ease-out 0.3s both;
+  pointer-events: none;
+}
+
+.processing-orb {
+  position: relative;
+}
+
+.processing-orb-ring {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 2px solid rgba(107, 144, 128, 0.2);
+  animation: orbPulse 2s ease-in-out infinite;
+}
+
+.processing-orb-ring-outer {
+  position: absolute;
+  inset: -24px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(107, 144, 128, 0.1);
+  animation: orbRotate 8s linear infinite;
 }
 
 .stagger-1 { animation-delay: 50ms; }

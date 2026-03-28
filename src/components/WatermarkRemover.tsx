@@ -9,6 +9,7 @@ import {
   X,
   Check,
   ShieldCheck,
+  ArrowDownToLine,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import {
@@ -52,47 +53,47 @@ function SideBySideComparison({
 }) {
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4 image-reveal">
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-5 image-reveal">
         <div className="space-y-2">
           <div
-            className="relative rounded-2xl overflow-hidden bg-accent/50 cursor-pointer group"
+            className="relative rounded-2xl overflow-hidden bg-accent/50 cursor-pointer group ring-1 ring-black/5"
             onClick={() => onZoom(true)}
           >
             <img
               src={originalSrc}
-              alt="Original"
+              alt="Original watermarked image"
               className="w-full h-auto max-h-[300px] sm:max-h-[400px] object-contain pointer-events-none"
               draggable={false}
             />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <div className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-xl bg-white/90 flex items-center justify-center shadow-sm">
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/8 transition-colors duration-250 flex items-center justify-center">
+              <div className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all duration-250 scale-90 group-hover:scale-100">
                 <ZoomIn className="w-5 h-5 text-foreground" />
               </div>
             </div>
           </div>
-          <span className="block text-center text-xs font-medium px-2 py-0.5 rounded-md bg-error/10 text-error w-fit mx-auto">
+          <span className="block text-center text-xs font-medium px-3 py-1 rounded-lg bg-error/10 text-error w-fit mx-auto border border-error/15">
             Original
           </span>
         </div>
 
         <div className="space-y-2">
           <div
-            className="relative rounded-2xl overflow-hidden bg-accent/50 cursor-pointer group"
+            className="relative rounded-2xl overflow-hidden bg-accent/50 cursor-pointer group ring-1 ring-black/5"
             onClick={() => onZoom(false)}
           >
             <img
               src={processedSrc}
-              alt="Clean"
+              alt="Clean image with watermark removed"
               className="w-full h-auto max-h-[300px] sm:max-h-[400px] object-contain pointer-events-none"
               draggable={false}
             />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <div className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-xl bg-white/90 flex items-center justify-center shadow-sm">
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/8 transition-colors duration-250 flex items-center justify-center">
+              <div className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all duration-250 scale-90 group-hover:scale-100">
                 <ZoomIn className="w-5 h-5 text-foreground" />
               </div>
             </div>
           </div>
-          <span className="block text-center text-xs font-medium px-2 py-0.5 rounded-md bg-success/10 text-success w-fit mx-auto">
+          <span className="block text-center text-xs font-medium px-3 py-1 rounded-lg bg-success/10 text-success w-fit mx-auto border border-success/15">
             Clean
           </span>
         </div>
@@ -336,46 +337,42 @@ function WatermarkRemoverContent() {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section - staggered entrance */}
       <div
-        className={`text-center space-y-4 max-w-2xl mx-auto hero-enter ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
+        className={`text-center space-y-4 max-w-2xl mx-auto ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
       >
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/15">
           <Sparkles className="w-4 h-4" />
           <span>Simple & Private</span>
         </div>
         <h1 className="font-heading text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
           Remove Gemini Watermarks
         </h1>
-        <p className="text-muted-foreground text-base leading-relaxed">
+        <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-lg mx-auto">
           Upload your image and we'll gently remove the watermark. Everything
           happens right here in your browser — your images never leave your
           device.
         </p>
         <div className="flex items-center justify-center gap-3 sm:gap-4 pt-2 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/60 px-2.5 py-1 rounded-md border border-border/50">
             <ShieldCheck className="w-3.5 h-3.5 text-primary" />
             <span>100% Local</span>
           </div>
-          <div className="w-px h-3 bg-border" />
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/60 px-2.5 py-1 rounded-md border border-border/50">
             <ImageIcon className="w-3.5 h-3.5 text-primary" />
             <span>PNG, JPG, WebP</span>
           </div>
-          <div className="w-px h-3 bg-border" />
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/60 px-2.5 py-1 rounded-md border border-border/50">
+            <ArrowDownToLine className="w-3.5 h-3.5 text-primary" />
             <span>Instant</span>
           </div>
         </div>
       </div>
 
-      {/* Upload Zone Card */}
       <Card
         className={
           stage !== "idle"
             ? "overflow-hidden transition-all duration-500 ease-out animate-in slide-in-from-bottom"
-            : "shadow-sm animate-bounce-in"
+            : "shadow-sm animate-bounce-in upload-zone-glow"
         }
         style={stage === "idle" ? { animationDelay: "200ms" } : undefined}
       >
@@ -423,7 +420,7 @@ function WatermarkRemoverContent() {
 
               <div className="space-y-6">
                 <div
-                  className={`mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sage-gradient flex items-center justify-center shadow-sm transition-all duration-300 ${isDragging ? "scale-110 wiggle" : "upload-icon-idle"}`}
+                  className={`mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sage-gradient flex items-center justify-center shadow-md shadow-primary/20 transition-all duration-300 ${isDragging ? "scale-110 wiggle" : "upload-icon-idle"}`}
                 >
                   <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                 </div>
@@ -437,7 +434,7 @@ function WatermarkRemoverContent() {
                     or click to browse files
                   </p>
                   <p className="text-xs text-muted-foreground/70 mt-3">
-                    PNG, JPG, WebP supported • Max 10MB
+                    PNG, JPG, WebP supported · Max 10MB
                   </p>
                 </div>
                 <div className="flex items-center justify-center gap-2 pt-2">
@@ -464,7 +461,7 @@ function WatermarkRemoverContent() {
                   </p>
                   {imageSize && (
                     <p className="text-sm text-muted-foreground">
-                      {imageSize.width} × {imageSize.height}px • PNG
+                      {imageSize.width} × {imageSize.height}px · PNG
                     </p>
                   )}
                 </div>
@@ -496,7 +493,6 @@ function WatermarkRemoverContent() {
         </CardContent>
       </Card>
 
-      {/* Processing State - with animated orb */}
       {(stage === "uploading" || stage === "processing") && (
         <Card className="shadow-sm animate-in slide-in-from-bottom">
           <CardContent className="p-5 sm:p-10">
@@ -505,7 +501,7 @@ function WatermarkRemoverContent() {
                 <div className="processing-orb-ring" />
                 <div className="processing-orb-ring-outer" />
                 <div
-                  className={`relative w-24 h-24 rounded-2xl sage-gradient flex items-center justify-center transition-all duration-500 ${progress >= 100 ? "scale-110" : "scale-100"}`}
+                  className={`relative w-24 h-24 rounded-2xl sage-gradient flex items-center justify-center transition-all duration-500 shadow-lg shadow-primary/20 ${progress >= 100 ? "scale-110" : "scale-100"}`}
                 >
                   <RefreshCw
                     className={`w-12 h-12 text-white transition-all duration-500 ${stage === "processing" ? "animate-spin" : ""} ${progress >= 100 ? "opacity-0 scale-0" : "opacity-100"}`}
@@ -513,7 +509,7 @@ function WatermarkRemoverContent() {
                 </div>
                 {progress >= 100 && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-2xl bg-success flex items-center justify-center animate-spring">
+                    <div className="w-16 h-16 rounded-2xl bg-success flex items-center justify-center animate-spring shadow-lg shadow-success/30">
                       <Check className="w-10 h-10 text-white" />
                     </div>
                   </div>
@@ -552,7 +548,6 @@ function WatermarkRemoverContent() {
         </Card>
       )}
 
-      {/* Result Card - with celebration animation */}
       {stage === "complete" &&
         showResultCard &&
         originalImage &&
@@ -562,7 +557,7 @@ function WatermarkRemoverContent() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-12 h-12 rounded-xl bg-success flex items-center justify-center text-white shadow-sm transition-all duration-500 ${animateSuccess ? "success-burst" : ""}`}
+                    className={`w-12 h-12 rounded-xl bg-success flex items-center justify-center text-white shadow-sm shadow-success/20 transition-all duration-500 ${animateSuccess ? "success-burst" : ""}`}
                   >
                     <Check className="w-6 h-6" />
                   </div>
@@ -592,7 +587,7 @@ function WatermarkRemoverContent() {
                   <Button
                     onClick={handleDownload}
                     size="default"
-                    className="btn-shine min-h-[44px]"
+                    className="btn-shine min-h-[44px] shadow-md shadow-primary/20"
                   >
                     <Download className="w-5 h-5" />
                     Download PNG
@@ -626,12 +621,24 @@ function WatermarkRemoverContent() {
                   <div className="w-px h-4 bg-border" />
                   <p className="text-xs text-muted-foreground">
                     Press{" "}
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded-md text-xs font-medium">
+                    <kbd className="px-1.5 py-0.5 bg-muted rounded-md text-xs font-medium border border-border/60">
                       ⌘S
                     </kbd>{" "}
                     to save
                   </p>
                 </div>
+              </div>
+
+              <div className="flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReset}
+                  className="text-muted-foreground"
+                >
+                  <RefreshCw className="w-4 h-4 mr-1.5" />
+                  Process another image
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -639,7 +646,6 @@ function WatermarkRemoverContent() {
 
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Zoom Modal - with rich transitions */}
       {showZoom && (originalImage || processedImage) && (
         <div
           className="fixed inset-0 z-50 bg-black/90 modal-backdrop flex items-center justify-center p-2 sm:p-4"
@@ -649,12 +655,12 @@ function WatermarkRemoverContent() {
           aria-label="Image comparison zoom"
         >
           <div
-            className="relative max-w-6xl max-h-full w-full"
+            className="relative max-w-6xl max-h-full w-full animate-in slide-in-from-bottom"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={showOriginal ? originalImage! : processedImage!}
-              alt={showOriginal ? "Original" : "Processed"}
+              alt={showOriginal ? "Original image" : "Processed clean image"}
               className="w-full max-h-[80vh] sm:max-h-[90vh] object-contain rounded-xl sm:rounded-2xl shadow-xl animate-flip-in"
             />
 
@@ -671,7 +677,7 @@ function WatermarkRemoverContent() {
                   setShowOriginal(true);
                   trackCompareToggle(true);
                 }}
-                className={`px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px] ${
+                className={`px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px] ${
                   showOriginal
                     ? "bg-white text-foreground shadow-sm"
                     : "text-white hover:bg-white/10"
@@ -684,7 +690,7 @@ function WatermarkRemoverContent() {
                   setShowOriginal(false);
                   trackCompareToggle(false);
                 }}
-                className={`px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px] ${
+                className={`px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px] ${
                   !showOriginal
                     ? "bg-white text-foreground shadow-sm"
                     : "text-white hover:bg-white/10"

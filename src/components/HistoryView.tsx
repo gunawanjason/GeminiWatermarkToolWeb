@@ -8,10 +8,7 @@ import {
   RefreshCw,
   ArrowRight,
   Image as ImageIcon,
-  Check,
   X,
-  Sparkles,
-  ShieldCheck,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Card, CardContent } from "./ui/Card";
@@ -41,6 +38,7 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
     null,
   );
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
   const { addToast } = useToast();
 
   const loadHistory = React.useCallback(async () => {
@@ -59,6 +57,7 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
   }, [addToast]);
 
   React.useEffect(() => {
+    setMounted(true);
     loadHistory();
   }, [loadHistory, refreshTrigger]);
 
@@ -163,7 +162,7 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 animate-in scale-in">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
             <RefreshCw className="w-6 h-6 text-primary animate-spin" />
           </div>
@@ -177,14 +176,16 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div
+        className={`flex flex-col items-center justify-center py-24 text-center ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
+      >
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-primary/5 rounded-full blur-3xl" />
           <div className="relative w-32 h-32 rounded-3xl bg-gradient-to-br from-primary/10 to-accent flex items-center justify-center border border-primary/10">
-            <ImageIcon className="w-16 h-16 text-muted-foreground/30" />
+            <ImageIcon className="w-16 h-16 text-primary/25" />
           </div>
-          <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Clock className="w-5 h-5 text-primary" />
+          <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/10">
+            <Clock className="w-5 h-5 text-primary/60" />
           </div>
         </div>
         <h3 className="text-2xl font-heading font-semibold text-foreground mb-3">
@@ -196,7 +197,7 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
         </p>
         <a
           href="/"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/85 transition-all shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/85 transition-all shadow-sm hover:shadow-md shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 min-h-[44px]"
         >
           Start removing watermarks
           <ArrowRight className="w-4 h-4" />
@@ -207,7 +208,9 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div
+        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
+      >
         <div className="space-y-1">
           <h1 className="font-heading text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
             Your History
@@ -217,7 +220,12 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={handleDownloadAll}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleDownloadAll}
+            className="btn-shine min-h-[44px]"
+          >
             <Archive className="w-4 h-4 mr-1.5" />
             Download All
           </Button>
@@ -225,7 +233,7 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
             variant="ghost"
             size="sm"
             onClick={handleClearAll}
-            className="text-error"
+            className="text-error min-h-[44px]"
           >
             <Trash2 className="w-4 h-4 mr-1.5" />
             Clear
@@ -303,12 +311,12 @@ function HistoryListItem({
 
   return (
     <div
-      className="group relative bg-card rounded-2xl border border-transparent hover:border-border/60 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden animate-in slide-in-up"
-      style={{ animationDelay: `${Math.min(index * 40, 200)}ms` }}
+      className="group relative bg-card rounded-2xl border border-transparent hover:border-border/60 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden animate-in slide-in-up ring-1 ring-black/[0.03]"
+      style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
     >
       <div className="flex items-center gap-3 sm:gap-4 p-3">
         <div
-          className="relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden cursor-pointer bg-accent/50"
+          className="relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden cursor-pointer bg-accent/50 ring-1 ring-black/5"
           onClick={onPreview}
           tabIndex={0}
           role="button"
@@ -321,16 +329,21 @@ function HistoryListItem({
           }}
         >
           <img
-            src={
-              showOriginal ? item.originalDataUrl : item.processedDataUrl
-            }
+            src={showOriginal ? item.originalDataUrl : item.processedDataUrl}
             alt={item.fileName}
-            className="w-full h-full object-cover transition-all duration-200"
+            className="w-full h-full object-cover transition-all duration-250"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-            <Eye className="w-5 h-5 text-white" />
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-250 flex items-center justify-center">
+            <div className="w-8 h-8 min-w-[44px] min-h-[44px] rounded-lg bg-white/90 backdrop-blur-sm flex items-center justify-center">
+              <Eye className="w-4 h-4 text-foreground" />
+            </div>
           </div>
+          {showOriginal && (
+            <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-error/80 text-[8px] text-white font-medium">
+              ORIG
+            </div>
+          )}
         </div>
 
         <div className="min-w-0 flex-1">
@@ -342,7 +355,7 @@ function HistoryListItem({
               >
                 {item.fileName}
               </p>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
                 <span
                   className="flex items-center gap-1"
                   title={formatFullDate(item.processedAt)}
@@ -380,6 +393,7 @@ function HistoryListItem({
               e.stopPropagation();
               onDownload();
             }}
+            aria-label="Download"
           >
             <Download className="w-4 h-4" />
           </Button>
@@ -391,6 +405,7 @@ function HistoryListItem({
               e.stopPropagation();
               onDelete();
             }}
+            aria-label="Delete"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -425,22 +440,20 @@ function HistoryPreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-2 sm:p-4 animate-in fade-in"
+      className="fixed inset-0 z-50 bg-black/90 modal-backdrop flex items-center justify-center p-2 sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Preview image"
     >
       <div
-        className="relative max-w-4xl max-h-full w-full"
+        className="relative max-w-4xl max-h-full w-full animate-in slide-in-from-bottom"
         onClick={(e) => e.stopPropagation()}
       >
         <img
-          src={
-            showOriginal ? item.originalDataUrl : item.processedDataUrl
-          }
+          src={showOriginal ? item.originalDataUrl : item.processedDataUrl}
           alt={item.fileName}
-          className="w-full max-h-[80vh] sm:max-h-[85vh] object-contain rounded-xl sm:rounded-2xl shadow-xl animate-in scale-in"
+          className="w-full max-h-[80vh] sm:max-h-[85vh] object-contain rounded-xl sm:rounded-2xl shadow-2xl animate-flip-in"
         />
 
         <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-xl rounded-xl px-3 py-1.5 sm:px-4 sm:py-2 shadow-lg max-w-[70vw]">
@@ -454,7 +467,7 @@ function HistoryPreviewModal({
           <button
             onClick={() => setShowOriginal(true)}
             className={cn(
-              "px-3 py-2.5 sm:px-4 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px]",
+              "px-3 py-2.5 sm:px-4 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px]",
               showOriginal
                 ? "bg-white text-foreground shadow-sm"
                 : "text-white hover:bg-white/10",
@@ -465,7 +478,7 @@ function HistoryPreviewModal({
           <button
             onClick={() => setShowOriginal(false)}
             className={cn(
-              "px-3 py-2.5 sm:px-4 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px]",
+              "px-3 py-2.5 sm:px-4 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px]",
               !showOriginal
                 ? "bg-white text-foreground shadow-sm"
                 : "text-white hover:bg-white/10",
@@ -474,7 +487,12 @@ function HistoryPreviewModal({
             Processed
           </button>
           <div className="w-px h-5 sm:h-7 bg-white/20 flex-shrink-0 hidden sm:block" />
-          <Button size="sm" onClick={onDownload} variant="default" className="flex-shrink-0 min-h-[44px]">
+          <Button
+            size="sm"
+            onClick={onDownload}
+            variant="default"
+            className="flex-shrink-0 min-h-[44px] btn-shine"
+          >
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline ml-1">Download</span>
           </Button>
@@ -483,6 +501,7 @@ function HistoryPreviewModal({
         <button
           onClick={onClose}
           className="absolute top-2 right-2 sm:top-4 sm:right-4 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-black/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 min-w-[44px] min-h-[44px]"
+          aria-label="Close preview"
         >
           <X className="w-5 h-5" />
         </button>
@@ -520,7 +539,7 @@ function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4"
       onClick={onCancel}
       role="dialog"
       aria-modal="true"
@@ -528,15 +547,22 @@ function ConfirmDialog({
       aria-describedby="confirm-dialog-message"
     >
       <div
-        className="bg-card rounded-2xl shadow-xl max-w-md w-full p-6 animate-in scale-in border border-border/30"
+        className="bg-card rounded-2xl shadow-xl max-w-md w-full p-6 animate-in slide-in-from-bottom border border-border/30"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-3">
-          <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center",
-            isDestructive ? "bg-error/10" : "bg-primary/10",
-          )}>
-            <Trash2 className={cn("w-5 h-5", isDestructive ? "text-error" : "text-primary")} />
+          <div
+            className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center",
+              isDestructive ? "bg-error/10" : "bg-primary/10",
+            )}
+          >
+            <Trash2
+              className={cn(
+                "w-5 h-5",
+                isDestructive ? "text-error" : "text-primary",
+              )}
+            />
           </div>
           <h3
             id="confirm-dialog-title"
@@ -552,7 +578,12 @@ function ConfirmDialog({
           {message}
         </p>
         <div className="flex items-center justify-end gap-3">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="min-h-[44px]"
+          >
             {cancelLabel}
           </Button>
           <Button
@@ -560,6 +591,7 @@ function ConfirmDialog({
             onClick={onConfirm}
             variant={isDestructive ? "danger" : "default"}
             autoFocus
+            className="min-h-[44px]"
           >
             {confirmLabel}
           </Button>
