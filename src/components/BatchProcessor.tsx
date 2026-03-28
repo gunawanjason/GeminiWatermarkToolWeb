@@ -52,14 +52,11 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
   const [uploadedFiles, setUploadedFiles] = React.useState<File[]>([]);
   const [currentProcessingIndex, setCurrentProcessingIndex] =
     React.useState<number>(-1);
-  const [mounted, setMounted] = React.useState(false);
-
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const { addToast } = useToast();
 
   React.useEffect(() => {
-    setMounted(true);
     trackBatchModeUse();
   }, []);
 
@@ -336,7 +333,7 @@ function BatchProcessorContent({ onHistoryUpdated }: BatchProcessorProps) {
   return (
     <div className="space-y-8">
       <div
-        className={`text-center space-y-4 max-w-2xl mx-auto ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
+        className="text-center space-y-4 max-w-2xl mx-auto hero-enter"
       >
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
           <Sparkles className="w-4 h-4" />

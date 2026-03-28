@@ -38,7 +38,6 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
     null,
   );
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
-  const [mounted, setMounted] = React.useState(false);
   const { addToast } = useToast();
 
   const loadHistory = React.useCallback(async () => {
@@ -57,7 +56,6 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
   }, [addToast]);
 
   React.useEffect(() => {
-    setMounted(true);
     loadHistory();
   }, [loadHistory, refreshTrigger]);
 
@@ -177,7 +175,7 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
   if (items.length === 0) {
     return (
       <div
-        className={`flex flex-col items-center justify-center py-24 text-center ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
+        className="flex flex-col items-center justify-center py-24 text-center hero-enter"
       >
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-primary/5 rounded-full blur-3xl" />
@@ -209,7 +207,7 @@ function HistoryViewContent({ refreshTrigger }: HistoryViewProps) {
   return (
     <div className="space-y-6">
       <div
-        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hero-enter"
       >
         <div className="space-y-1">
           <h1 className="font-heading text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
