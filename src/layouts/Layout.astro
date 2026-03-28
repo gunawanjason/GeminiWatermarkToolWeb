@@ -13,6 +13,11 @@ const {
   title,
   description = "Remove Gemini AI watermarks from images using reverse alpha blending.",
 } = Astro.props;
+
+// Google Analytics configuration
+const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID || 'G-0VYTHHEH0J';
+const isDev = import.meta.env.DEV;
+const isAnalyticsEnabled = !isDev && !!gaMeasurementId;
 ---
 
 <!doctype html>
@@ -53,31 +58,38 @@ const {
     </style>
 
     <!-- Google tag (gtag.js) -->
-    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-0VYTHHEH0J"></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-0VYTHHEH0J', {
-        send_page_view: true,
-        page_title: document.title,
-        page_location: window.location.href,
-        custom_map: {
-          'dimension1': 'processing_duration_ms',
-          'dimension2': 'file_count',
-          'dimension3': 'error_type'
-        }
-      });
+    {isAnalyticsEnabled && (
+      <>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}></script>
+        <script is:inline set:html={`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${gaMeasurementId}', {
+            send_page_view: true,
+            page_title: document.title,
+            page_location: window.location.href,
+            debug_mode: false
+          });
 
-      // Track SPA navigation for Astro View Transitions
-      document.addEventListener('astro:page-load', function() {
-        gtag('event', 'page_view', {
-          page_title: document.title,
-          page_location: window.location.href,
-          page_path: window.location.pathname
-        });
-      });
-    </script>
+          // Track SPA navigation for Astro View Transitions
+          document.addEventListener('astro:page-load', function() {
+            gtag('event', 'page_view', {
+              page_title: document.title,
+              page_location: window.location.href,
+              page_path: window.location.pathname
+            });
+          });
+
+          console.debug('[GA] Analytics initialized with ID: ${gaMeasurementId}');
+        `}></script>
+      </>
+    )}
+    {!isAnalyticsEnabled && (
+      <script is:inline set:html={`
+        console.debug('[GA] Analytics is disabled (measurementId=${gaMeasurementId}, isDev=${isDev})');
+      `}></script>
+    )}
 
     <ClientRouter />
   </head>
@@ -87,7 +99,7 @@ const {
   >
     <a href="#main-content" class="skip-to-content">Skip to main content</a>
     <Header />
-    <main id="main-content" class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12" tabindex="-1">
+    <main id="main-content" class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 hero-gradient" tabindex="-1">
       <slot />
     </main>
     <Footer />

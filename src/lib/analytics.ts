@@ -96,10 +96,25 @@ declare global {
 }
 
 /**
+ * Check if analytics is enabled (not in development)
+ */
+function isAnalyticsEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  // Check if we're in development mode via a flag set in Layout
+  const isDev = import.meta.env.DEV;
+
+  // Check if measurement ID is configured
+  const measurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
+
+  return !isDev && !!measurementId;
+}
+
+/**
  * Check if gtag is available
  */
 function isGtagAvailable(): boolean {
-  return typeof window !== 'undefined' && typeof window.gtag === 'function';
+  return typeof window !== 'undefined' && typeof window.gtag === 'function' && isAnalyticsEnabled();
 }
 
 /**
@@ -110,7 +125,10 @@ export function trackEvent(
   params: BaseEventParams = {}
 ): void {
   if (!isGtagAvailable()) {
-    console.debug('[GA] Event not tracked (gtag unavailable):', eventName, params);
+    // Log in development mode so you can see what would be tracked
+    if (import.meta.env.DEV) {
+      console.debug('[GA] DEV MODE - Would track:', eventName, params);
+    }
     return;
   }
 
@@ -364,7 +382,10 @@ export function trackPageView(
   pageTitle: string
 ): void {
   if (!isGtagAvailable()) {
-    console.debug('[GA] Page view not tracked (gtag unavailable):', pagePath);
+    // Log in development mode
+    if (import.meta.env.DEV) {
+      console.debug('[GA] DEV MODE - Would track page view:', pagePath, pageTitle);
+    }
     return;
   }
 

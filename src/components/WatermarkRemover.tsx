@@ -7,8 +7,8 @@ import {
   Sparkles,
   ZoomIn,
   X,
-  ArrowRight,
   Check,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import {
@@ -41,6 +41,66 @@ import {
 
 type ProcessingStage = "idle" | "uploading" | "processing" | "complete";
 
+function SideBySideComparison({
+  originalSrc,
+  processedSrc,
+  onZoom,
+}: {
+  originalSrc: string;
+  processedSrc: string;
+  onZoom: (showOriginal: boolean) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4 image-reveal">
+        <div className="space-y-2">
+          <div
+            className="relative rounded-2xl overflow-hidden bg-accent/50 cursor-pointer group"
+            onClick={() => onZoom(true)}
+          >
+            <img
+              src={originalSrc}
+              alt="Original"
+              className="w-full h-auto max-h-[300px] sm:max-h-[400px] object-contain pointer-events-none"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-xl bg-white/90 flex items-center justify-center shadow-sm">
+                <ZoomIn className="w-5 h-5 text-foreground" />
+              </div>
+            </div>
+          </div>
+          <span className="block text-center text-xs font-medium px-2 py-0.5 rounded-md bg-error/10 text-error w-fit mx-auto">
+            Original
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          <div
+            className="relative rounded-2xl overflow-hidden bg-accent/50 cursor-pointer group"
+            onClick={() => onZoom(false)}
+          >
+            <img
+              src={processedSrc}
+              alt="Clean"
+              className="w-full h-auto max-h-[300px] sm:max-h-[400px] object-contain pointer-events-none"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="w-10 h-10 min-w-[44px] min-h-[44px] rounded-xl bg-white/90 flex items-center justify-center shadow-sm">
+                <ZoomIn className="w-5 h-5 text-foreground" />
+              </div>
+            </div>
+          </div>
+          <span className="block text-center text-xs font-medium px-2 py-0.5 rounded-md bg-success/10 text-success w-fit mx-auto">
+            Clean
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WatermarkRemoverContent() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [processedImage, setProcessedImage] = useState<string | null>(null);
@@ -57,26 +117,25 @@ function WatermarkRemoverContent() {
   const [progress, setProgress] = useState(0);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [processingStartTime, setProcessingStartTime] = useState<number>(0);
-
-  // Animation states
   const [showResultCard, setShowResultCard] = useState(false);
   const [animateSuccess, setAnimateSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { addToast } = useToast();
 
   useEffect(() => {
+    setMounted(true);
     trackSingleModeUse();
   }, []);
 
-  // Handle processing completion with smooth animation
   useEffect(() => {
     if (stage === "complete") {
       setAnimateSuccess(true);
       setTimeout(() => {
         setShowResultCard(true);
-      }, 300);
+      }, 350);
     } else {
       setShowResultCard(false);
       setAnimateSuccess(false);
@@ -121,8 +180,7 @@ function WatermarkRemoverContent() {
         const processedDataUrl = canvasRef.current.toDataURL("image/png");
         setProcessedImage(processedDataUrl);
 
-        // Small delay for smooth animation
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise((r) => setTimeout(r, 400));
         setStage("complete");
 
         trackProcessingComplete(file, {
@@ -150,7 +208,7 @@ function WatermarkRemoverContent() {
         trackProcessingError(
           file,
           error instanceof Error ? error : new Error(String(error)),
-          { width: size.width, height: size.height }
+          { width: size.width, height: size.height },
         );
 
         addToast("error", "Error processing image. Please try again.");
@@ -161,9 +219,13 @@ function WatermarkRemoverContent() {
   );
 
   const handleFile = useCallback(
-    (file: File, method: 'click' | 'drag_drop' = 'click') => {
+    (file: File, method: "click" | "drag_drop" = "click") => {
       if (!file.type.startsWith("image/")) {
-        trackError('invalid_file_type', `User tried to upload ${file.type}`, 'WatermarkRemover');
+        trackError(
+          "invalid_file_type",
+          `User tried to upload ${file.type}`,
+          "WatermarkRemover",
+        );
         addToast("error", "Please upload an image file");
         return;
       }
@@ -212,7 +274,7 @@ function WatermarkRemoverContent() {
       setIsDragging(false);
 
       const file = e.dataTransfer.files[0];
-      if (file) handleFile(file, 'drag_drop');
+      if (file) handleFile(file, "drag_drop");
     },
     [handleFile],
   );
@@ -237,12 +299,12 @@ function WatermarkRemoverContent() {
       const newFileName = fileName.replace(/\.[^.]+$/, "") + "_clean.png";
       downloadBlob(pngBlob, newFileName);
 
-      trackDownload(newFileName, 'image/png', 'single');
+      trackDownload(newFileName, "image/png", "single");
 
       addToast("success", `Downloaded ${newFileName}`);
     } catch (error) {
       console.error("Error downloading:", error);
-      trackError('download_failed', String(error), 'WatermarkRemover');
+      trackError("download_failed", String(error), "WatermarkRemover");
       addToast("error", "Failed to download image");
     }
   }, [processedImage, fileName, addToast]);
@@ -274,8 +336,10 @@ function WatermarkRemoverContent() {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="text-center space-y-4 max-w-2xl mx-auto">
+      {/* Hero Section - staggered entrance */}
+      <div
+        className={`text-center space-y-4 max-w-2xl mx-auto hero-enter ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
+      >
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
           <Sparkles className="w-4 h-4" />
           <span>Simple & Private</span>
@@ -284,14 +348,44 @@ function WatermarkRemoverContent() {
           Remove Gemini Watermarks
         </h1>
         <p className="text-muted-foreground text-base leading-relaxed">
-          Upload your image and we'll gently remove the watermark.
-          Everything happens right here in your browser — your images never leave your device.
+          Upload your image and we'll gently remove the watermark. Everything
+          happens right here in your browser — your images never leave your
+          device.
         </p>
+        <div className="flex items-center justify-center gap-3 sm:gap-4 pt-2 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+            <span>100% Local</span>
+          </div>
+          <div className="w-px h-3 bg-border" />
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <ImageIcon className="w-3.5 h-3.5 text-primary" />
+            <span>PNG, JPG, WebP</span>
+          </div>
+          <div className="w-px h-3 bg-border" />
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <span>Instant</span>
+          </div>
+        </div>
       </div>
 
-      {/* Upload Zone - with smooth height transition */}
-      <Card className={stage !== "idle" ? "overflow-hidden transition-all duration-500 ease-out" : "shadow-sm"}>
-        <CardContent className={stage !== "idle" ? "p-4 transition-all duration-500 ease-out" : "p-8 transition-all duration-500 ease-out"}>
+      {/* Upload Zone Card */}
+      <Card
+        className={
+          stage !== "idle"
+            ? "overflow-hidden transition-all duration-500 ease-out animate-in slide-in-from-bottom"
+            : "shadow-sm animate-bounce-in"
+        }
+        style={stage === "idle" ? { animationDelay: "200ms" } : undefined}
+      >
+        <CardContent
+          className={
+            stage !== "idle"
+              ? "p-4 transition-all duration-500 ease-out"
+              : "p-8 transition-all duration-500 ease-out"
+          }
+        >
           {stage === "idle" ? (
             <div
               onDrop={handleDrop}
@@ -308,11 +402,11 @@ function WatermarkRemoverContent() {
               role="button"
               aria-label="Upload image"
               className={`
-                relative border-2 border-dashed rounded-2xl p-12 sm:p-16 text-center cursor-pointer
+                relative border-2 border-dashed rounded-2xl p-8 sm:p-12 lg:p-16 text-center cursor-pointer
                 transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2
                 ${
                   isDragging
-                    ? "border-primary bg-primary/5 scale-[1.01]"
+                    ? "border-primary bg-primary/5 scale-[1.01] shadow-lg shadow-primary/10"
                     : "border-border hover:border-primary/40 hover:bg-accent/50"
                 }
               `}
@@ -328,17 +422,21 @@ function WatermarkRemoverContent() {
               />
 
               <div className="space-y-6">
-                <div className="mx-auto w-20 h-20 rounded-2xl sage-gradient flex items-center justify-center shadow-sm transition-transform duration-300 hover:scale-105">
-                  <Upload className="w-10 h-10 text-white" />
+                <div
+                  className={`mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sage-gradient flex items-center justify-center shadow-sm transition-all duration-300 ${isDragging ? "scale-110 wiggle" : "upload-icon-idle"}`}
+                >
+                  <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                 </div>
                 <div>
-                  <p className="text-xl font-medium text-foreground">
-                    Drop your image here
+                  <p className="text-lg sm:text-xl font-medium text-foreground">
+                    {isDragging
+                      ? "Drop your image here!"
+                      : "Drop your image here"}
                   </p>
-                  <p className="text-muted-foreground mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     or click to browse files
                   </p>
-                  <p className="text-sm text-muted-foreground/70 mt-3">
+                  <p className="text-xs text-muted-foreground/70 mt-3">
                     PNG, JPG, WebP supported • Max 10MB
                   </p>
                 </div>
@@ -352,7 +450,7 @@ function WatermarkRemoverContent() {
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-4 animate-in fade-in">
+            <div className="flex items-center justify-between gap-4 animate-in slide-in-from-left">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
                   <ImageIcon className="w-6 h-6 text-primary" />
@@ -398,22 +496,34 @@ function WatermarkRemoverContent() {
         </CardContent>
       </Card>
 
-      {/* Processing State - with smooth entrance/exit */}
+      {/* Processing State - with animated orb */}
       {(stage === "uploading" || stage === "processing") && (
-        <Card className="shadow-sm animate-in slide-in-up">
-          <CardContent className="p-10">
+        <Card className="shadow-sm animate-in slide-in-from-bottom">
+          <CardContent className="p-5 sm:p-10">
             <div className="flex flex-col items-center justify-center space-y-8">
-              <div className="relative">
-                <div className={`w-24 h-24 rounded-2xl sage-gradient flex items-center justify-center transition-all duration-500 ${progress >= 100 ? 'scale-110' : 'scale-100'}`}>
-                  <RefreshCw className={`w-12 h-12 text-white transition-all duration-500 ${stage === "processing" ? 'animate-spin' : ''} ${progress >= 100 ? 'opacity-0' : 'opacity-100'}`} />
+              <div className="relative processing-orb">
+                <div className="processing-orb-ring" />
+                <div className="processing-orb-ring-outer" />
+                <div
+                  className={`relative w-24 h-24 rounded-2xl sage-gradient flex items-center justify-center transition-all duration-500 ${progress >= 100 ? "scale-110" : "scale-100"}`}
+                >
+                  <RefreshCw
+                    className={`w-12 h-12 text-white transition-all duration-500 ${stage === "processing" ? "animate-spin" : ""} ${progress >= 100 ? "opacity-0 scale-0" : "opacity-100"}`}
+                  />
                 </div>
                 {progress >= 100 && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Check className="w-12 h-12 text-white checkmark-draw" />
+                    <div className="w-16 h-16 rounded-2xl bg-success flex items-center justify-center animate-spring">
+                      <Check className="w-10 h-10 text-white" />
+                    </div>
                   </div>
                 )}
-                <div className={`absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center text-sm font-semibold shadow-md transition-all duration-300 ${progress >= 100 ? 'scale-110 bg-success' : ''}`}>
-                  <span className={progress >= 100 ? 'count-up' : ''}>{Math.round(progress)}%</span>
+                <div
+                  className={`absolute -bottom-2 -right-2 w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold shadow-md transition-all duration-300 ${progress >= 100 ? "scale-110 bg-success text-white success-burst" : "bg-primary text-white"}`}
+                >
+                  <span className={progress >= 100 ? "count-up" : ""}>
+                    {Math.round(progress)}%
+                  </span>
                 </div>
               </div>
               <div className="text-center space-y-2">
@@ -421,12 +531,14 @@ function WatermarkRemoverContent() {
                   {stage === "uploading"
                     ? "Loading your image..."
                     : progress >= 100
-                    ? "Complete!"
-                    : "Gently removing watermark..."}
+                      ? "Almost there..."
+                      : "Gently removing watermark..."}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {stage === "processing" && progress < 100 &&
+                  {stage === "processing" &&
+                    progress < 100 &&
                     "Applying reverse alpha blending"}
+                  {progress >= 100 && "Preparing your result"}
                 </p>
               </div>
               <ProgressBar
@@ -440,167 +552,126 @@ function WatermarkRemoverContent() {
         </Card>
       )}
 
-      {/* Result - with staggered entrance animations */}
-      {stage === "complete" && showResultCard && originalImage && processedImage && (
-        <Card className="shadow-sm animate-in slide-in-up">
-          <CardHeader className="pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-3 stagger-1">
-                <div className={`w-12 h-12 rounded-xl bg-success flex items-center justify-center text-white shadow-sm transition-all duration-500 ${animateSuccess ? 'pulse-success' : ''}`}>
-                  <Check className="w-6 h-6" />
+      {/* Result Card - with celebration animation */}
+      {stage === "complete" &&
+        showResultCard &&
+        originalImage &&
+        processedImage && (
+          <Card className="shadow-sm animate-bounce-in overflow-hidden card-success-shimmer">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-12 h-12 rounded-xl bg-success flex items-center justify-center text-white shadow-sm transition-all duration-500 ${animateSuccess ? "success-burst" : ""}`}
+                  >
+                    <Check className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">All done!</CardTitle>
+                    <CardDescription className="mt-1">
+                      {detectedSize === "large" ? "96×96" : "48×48"} watermark
+                      removed
+                    </CardDescription>
+                  </div>
                 </div>
-                <div className="stagger-2">
-                  <CardTitle className="text-xl">All done!</CardTitle>
-                  <CardDescription className="mt-1">
-                    {detectedSize === "large" ? "96×96" : "48×48"} watermark
-                    removed
-                  </CardDescription>
-                </div>
-              </div>
-              <div className="stagger-3">
-                <Button onClick={handleDownload} size="lg">
-                  <Download className="w-5 h-5" />
-                  Download PNG
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-[1fr_auto_1fr] gap-4 md:gap-6 items-center">
-              {/* Original */}
-              <div className="space-y-3 stagger-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">
-                    Original
-                  </span>
-                  <span className="px-2.5 py-1 rounded-md bg-error/15 text-error text-xs font-medium">
-                    Has Watermark
-                  </span>
-                </div>
-                <div
-                  className="relative rounded-2xl overflow-hidden bg-accent/50 cursor-pointer group focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-2 transition-all duration-200 image-reveal"
-                  onClick={() => {
-                    setShowOriginal(true);
-                    setShowZoom(true);
-                    trackZoomView(fileName);
-                  }}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Zoom original image"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setShowZoom(true);
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="btn-shine min-h-[44px]"
+                    onClick={() => {
                       setShowOriginal(true);
+                      setShowZoom(true);
                       trackZoomView(fileName);
-                    }
-                  }}
-                >
-                  <img
-                    src={originalImage}
-                    alt="Original"
-                    className="w-full h-auto max-h-[350px] object-contain"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-250 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                    <div className="w-12 h-12 rounded-xl bg-white/90 flex items-center justify-center shadow-sm">
-                      <ZoomIn className="w-6 h-6 text-foreground" />
-                    </div>
-                  </div>
+                    }}
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                    <span className="hidden sm:inline">Full View</span>
+                    <span className="sm:hidden">Zoom</span>
+                  </Button>
+                  <Button
+                    onClick={handleDownload}
+                    size="default"
+                    className="btn-shine min-h-[44px]"
+                  >
+                    <Download className="w-5 h-5" />
+                    Download PNG
+                  </Button>
                 </div>
               </div>
-
-              {/* Arrow - centered between images */}
-              <div className="hidden md:flex flex-col items-center justify-center self-stretch stagger-4">
-                <div className="w-11 h-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-sm shrink-0">
-                  <ArrowRight className="w-5 h-5" />
-                </div>
-              </div>
-
-              {/* Processed */}
-              <div className="space-y-3 stagger-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">
-                    Processed
-                  </span>
-                  <span className="px-2.5 py-1 rounded-md bg-success/15 text-success text-xs font-medium flex items-center gap-1">
-                    <Check className="w-3 h-3" />
-                    Clean
-                  </span>
-                </div>
-                <div
-                  className="relative rounded-2xl overflow-hidden bg-accent/50 cursor-pointer group focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-2 transition-all duration-200 image-reveal"
-                  onClick={() => {
-                    setShowOriginal(false);
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <SideBySideComparison
+                  originalSrc={originalImage}
+                  processedSrc={processedImage}
+                  onZoom={(showOrig) => {
+                    setShowOriginal(showOrig);
                     setShowZoom(true);
                     trackZoomView(fileName);
                   }}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Zoom processed image"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setShowZoom(true);
-                      setShowOriginal(false);
-                      trackZoomView(fileName);
-                    }
-                  }}
-                >
-                  <img
-                    src={processedImage}
-                    alt="Processed"
-                    className="w-full h-auto max-h-[350px] object-contain"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-250 ease-out flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                    <div className="w-12 h-12 rounded-xl bg-white/90 flex items-center justify-center shadow-sm">
-                      <ZoomIn className="w-6 h-6 text-foreground" />
-                    </div>
-                  </div>
+                />
+              </div>
+
+              <div className="flex items-center justify-center gap-6 py-2 flex-wrap">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-3 h-3 rounded-sm bg-error/30 border border-error/50" />
+                  Original
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-3 h-3 rounded-sm bg-success/30 border border-success/50" />
+                  Clean
+                </div>
+                <div className="hidden sm:flex items-center gap-2">
+                  <div className="w-px h-4 bg-border" />
+                  <p className="text-xs text-muted-foreground">
+                    Press{" "}
+                    <kbd className="px-1.5 py-0.5 bg-muted rounded-md text-xs font-medium">
+                      ⌘S
+                    </kbd>{" "}
+                    to save
+                  </p>
                 </div>
               </div>
-            </div>
-
-            <div className="text-center py-3 px-4 rounded-xl bg-accent/40">
-              <p className="text-sm text-muted-foreground">
-                Click images to zoom • Press{" "}
-                <kbd className="px-2 py-0.5 bg-background rounded-md text-xs font-medium shadow-sm">
-                  ⌘S
-                </kbd>{" "}
-                to save
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Zoom Modal */}
+      {/* Zoom Modal - with rich transitions */}
       {showZoom && (originalImage || processedImage) && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 z-50 bg-black/90 modal-backdrop flex items-center justify-center p-2 sm:p-4"
           onClick={() => setShowZoom(false)}
           role="dialog"
           aria-modal="true"
           aria-label="Image comparison zoom"
         >
           <div
-            className="relative max-w-6xl max-h-full"
+            className="relative max-w-6xl max-h-full w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={showOriginal ? originalImage! : processedImage!}
               alt={showOriginal ? "Original" : "Processed"}
-              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-xl"
+              className="w-full max-h-[80vh] sm:max-h-[90vh] object-contain rounded-xl sm:rounded-2xl shadow-xl animate-flip-in"
             />
 
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/75 backdrop-blur-xl rounded-2xl px-6 py-4 shadow-lg">
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-xl rounded-xl px-3 py-1.5 sm:px-4 sm:py-2 shadow-lg animate-in slide-in-from-bottom max-w-[70vw]" style={{ animationDelay: "100ms" }}>
+              <ImageIcon className="w-3.5 h-3.5 text-white/70" />
+              <p className="text-xs sm:text-sm text-white font-medium truncate">
+                {fileName}
+              </p>
+            </div>
+
+            <div className="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-3 bg-black/75 backdrop-blur-xl rounded-xl sm:rounded-2xl px-2.5 py-2 sm:px-6 sm:py-4 shadow-lg animate-in slide-in-from-bottom max-w-[95vw]" style={{ animationDelay: "200ms" }}>
               <button
                 onClick={() => {
                   setShowOriginal(true);
                   trackCompareToggle(true);
                 }}
-                className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+                className={`px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px] ${
                   showOriginal
                     ? "bg-white text-foreground shadow-sm"
                     : "text-white hover:bg-white/10"
@@ -613,27 +684,32 @@ function WatermarkRemoverContent() {
                   setShowOriginal(false);
                   trackCompareToggle(false);
                 }}
-                className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+                className={`px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 whitespace-nowrap min-h-[44px] ${
                   !showOriginal
                     ? "bg-white text-foreground shadow-sm"
                     : "text-white hover:bg-white/10"
                 }`}
               >
-                Processed
+                Clean
               </button>
-              <div className="w-px h-8 bg-white/20" />
-              <Button size="sm" onClick={handleDownload} variant="default">
-                <Download className="w-4 h-4 mr-1" />
-                Download
+              <div className="w-px h-6 bg-white/20 hidden sm:block" />
+              <Button
+                size="sm"
+                onClick={handleDownload}
+                variant="default"
+                className="btn-shine flex-shrink-0 min-h-[44px]"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline ml-1">Download</span>
               </Button>
             </div>
 
             <button
               onClick={() => setShowZoom(false)}
-              className="absolute top-6 right-6 w-14 h-14 rounded-2xl bg-black/75 text-white flex items-center justify-center hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-black/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/80 transition-all duration-200 hover:rotate-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 min-w-[44px] min-h-[44px]"
               aria-label="Close zoom view"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

@@ -68,7 +68,7 @@ function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm" aria-live="polite" aria-atomic="true">
+    <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 sm:max-w-sm z-50 flex flex-col gap-3" aria-live="polite" aria-atomic="true">
       {toasts.map((toast) => (
         <Toast key={toast.id} {...toast} onClose={() => onRemove(toast.id)} />
       ))}
@@ -81,6 +81,13 @@ interface ToastProps extends ToastItem {
 }
 
 function Toast({ type, message, onClose }: ToastProps) {
+  const [isExiting, setIsExiting] = React.useState(false);
+
+  const handleClose = React.useCallback(() => {
+    setIsExiting(true);
+    setTimeout(onClose, 200);
+  }, [onClose]);
+
   const icons: Record<ToastType, React.ReactNode> = {
     success: <CheckCircle className="w-5 h-5" />,
     error: <AlertCircle className="w-5 h-5" />,
@@ -88,36 +95,51 @@ function Toast({ type, message, onClose }: ToastProps) {
     warning: <AlertTriangle className="w-5 h-5" />,
   };
 
-  const colors: Record<ToastType, string> = {
-    success: "bg-green-50 border-green-200 text-green-800",
-    error: "bg-red-50 border-red-200 text-red-800",
-    info: "bg-blue-50 border-blue-200 text-blue-800",
-    warning: "bg-amber-50 border-amber-200 text-amber-800",
+  const styles: Record<ToastType, { bg: string; icon: string; border: string }> = {
+    success: {
+      bg: "bg-success/10",
+      icon: "text-success",
+      border: "border-success/20",
+    },
+    error: {
+      bg: "bg-error/10",
+      icon: "text-error",
+      border: "border-error/20",
+    },
+    info: {
+      bg: "bg-primary/10",
+      icon: "text-primary",
+      border: "border-primary/20",
+    },
+    warning: {
+      bg: "bg-warning/10",
+      icon: "text-warning",
+      border: "border-warning/20",
+    },
   };
 
-  const iconColors: Record<ToastType, string> = {
-    success: "text-green-500",
-    error: "text-red-500",
-    info: "text-blue-500",
-    warning: "text-amber-500",
-  };
+  const { bg, icon, border } = styles[type];
 
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg",
-        "animate-in slide-in-from-right-full fade-in duration-300",
-        colors[type],
+        "flex items-center gap-3 px-4 py-3.5 rounded-2xl border shadow-lg backdrop-blur-sm",
+        "transition-all duration-200",
+        isExiting
+          ? "opacity-0 translate-x-4"
+          : "animate-in slide-in-from-right-full",
+        bg,
+        border,
       )}
     >
-      <span className={iconColors[type]}>{icons[type]}</span>
-      <p className="flex-1 text-sm font-medium">{message}</p>
+      <span className={cn(icon, "shrink-0")}>{icons[type]}</span>
+      <p className="flex-1 text-sm font-medium text-foreground">{message}</p>
       <button
-        onClick={onClose}
-        className="p-1 rounded-lg hover:bg-black/10 transition-colors"
+        onClick={handleClose}
+        className="p-1.5 rounded-lg hover:bg-foreground/5 transition-colors shrink-0"
         aria-label="Close"
       >
-        <X className="w-4 h-4" />
+        <X className="w-4 h-4 text-muted-foreground" />
       </button>
     </div>
   );

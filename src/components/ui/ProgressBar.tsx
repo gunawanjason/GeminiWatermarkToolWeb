@@ -28,14 +28,31 @@ export function ProgressBar({
     <div className={cn("w-full", className)}>
       <div
         className={cn(
-          "w-full rounded-full bg-accent/30 overflow-hidden",
+          "w-full rounded-full bg-accent/40 overflow-hidden",
           sizeClasses[size],
         )}
       >
         <div
-          className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-300 ease-out"
+          className={cn(
+            "h-full rounded-full transition-all duration-500 ease-out relative",
+            percentage >= 100
+              ? "bg-success"
+              : "bg-gradient-to-r from-primary via-primary/90 to-primary/70",
+          )}
           style={{ width: `${percentage}%` }}
-        />
+        >
+          {percentage > 0 && percentage < 100 && (
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)",
+                backgroundSize: "200% 100%",
+                animation: "progressBarShimmer 2s ease-in-out infinite",
+              }}
+            />
+          )}
+        </div>
       </div>
       {showLabel && (
         <div className="flex justify-between mt-1 text-xs text-muted-foreground">

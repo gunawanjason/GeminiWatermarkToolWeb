@@ -51,7 +51,7 @@ const { pathname } = Astro.url;
     <nav
       role="navigation"
       aria-label="Main navigation"
-      class="flex items-center gap-1 sm:gap-2"
+      class="hidden sm:flex items-center gap-1.5 p-1.5 rounded-2xl bg-muted/40 border border-border/30"
     >
       {
         navItems.map(({ href, label, icon: Icon }) => {
@@ -64,15 +64,15 @@ const { pathname } = Astro.url;
               data-tab-name={tabName}
               onclick={`if (typeof gtag !== 'undefined') { gtag('event', 'tab_switch', { tab_name: '${tabName}' }); }`}
               class:list={[
-                "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-250",
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-250",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
               ]}
             >
               <Icon className="w-4 h-4" />
-              <span class="hidden sm:inline">{label}</span>
+              <span>{label}</span>
             </a>
           );
         })
@@ -80,3 +80,37 @@ const { pathname } = Astro.url;
     </nav>
   </div>
 </header>
+
+<nav
+  id="bottom-nav"
+  role="navigation"
+  aria-label="Mobile navigation"
+  class="sm:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-xl safe-area-pb"
+>
+  <div class="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
+    {
+      navItems.map(({ href, label, icon: Icon }) => {
+        const isActive =
+          pathname === href || (href !== "/" && pathname.startsWith(href));
+        const tabName = href === "/" ? "single" : href === "/batch" ? "batch" : "history";
+        return (
+          <a
+            href={href}
+            data-tab-name={tabName}
+            onclick={`if (typeof gtag !== 'undefined') { gtag('event', 'tab_switch', { tab_name: '${tabName}' }); }`}
+            class:list={[
+              "flex flex-col items-center justify-center gap-0.5 flex-1 py-2 rounded-xl text-[10px] font-medium transition-all duration-200 min-h-[48px]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+              isActive
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground",
+            ]}
+          >
+            <Icon className={isActive ? "w-5 h-5" : "w-5 h-5 opacity-60"} />
+            <span>{label}</span>
+          </a>
+        );
+      })
+    }
+  </div>
+</nav>
