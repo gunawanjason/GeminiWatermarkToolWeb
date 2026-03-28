@@ -338,7 +338,7 @@ function WatermarkRemoverContent() {
   return (
     <div className="space-y-8">
       <div
-        className={`text-center space-y-4 max-w-2xl mx-auto ${mounted ? "hero-enter" : "[&>*]:opacity-0"}`}
+        className="text-center space-y-4 max-w-2xl mx-auto hero-enter"
       >
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/15">
           <Sparkles className="w-4 h-4" />
